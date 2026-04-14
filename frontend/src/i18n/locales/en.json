@@ -1,0 +1,201 @@
+{
+  "app": {
+    "name": "CarSharing",
+    "tagline": "Rent cars from real people"
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "listYourCar": "List your car",
+    "login": "Login",
+    "register": "Register",
+    "myBookings": "My bookings",
+    "myListings": "My listings",
+    "messages": "Messages",
+    "profile": "Profile",
+    "logout": "Logout",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode"
+  },
+  "hero": {
+    "title": "Rent a car across Uzbekistan",
+    "subtitle": "Choose from thousands of verified cars at affordable prices",
+    "searchPlaceholder": "Where are you going?",
+    "dateFrom": "Pick-up date",
+    "dateTo": "Drop-off date",
+    "search": "Search"
+  },
+  "regions": {
+    "title": "Popular regions",
+    "subtitle": "Car rentals in the beautiful cities of Uzbekistan",
+    "carsAvailable": "{{count}} cars"
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "step1Title": "Choose a car",
+    "step1Desc": "Find the perfect car from thousands of options",
+    "step2Title": "Book it",
+    "step2Desc": "Select your dates and book in minutes",
+    "step3Title": "Drive",
+    "step3Desc": "Get the keys and enjoy your trip"
+  },
+  "featured": {
+    "title": "Featured cars",
+    "subtitle": "Most popular and top-rated cars",
+    "viewAll": "View all"
+  },
+  "categories": {
+    "title": "Categories",
+    "sedan": "Sedan",
+    "suv": "SUV",
+    "hatchback": "Hatchback",
+    "minivan": "Minivan",
+    "coupe": "Coupe",
+    "convertible": "Convertible",
+    "truck": "Truck",
+    "van": "Van"
+  },
+  "testimonials": {
+    "title": "What our users say",
+    "subtitle": "Reviews from our happy customers"
+  },
+  "hostCta": {
+    "title": "Earn money while your car sits idle",
+    "subtitle": "Hosts earn an average of 3,000,000 so'm per month",
+    "button": "List your car"
+  },
+  "stats": {
+    "title": "CarSharing in numbers",
+    "cars": "Cars",
+    "cities": "Cities",
+    "users": "Users",
+    "bookings": "Bookings"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "q1": "How does CarSharing work?",
+    "a1": "CarSharing connects private car owners with renters. Choose a car, book it, and pick it up.",
+    "q2": "How are prices set?",
+    "a2": "Prices are set by car owners. The rate is per day. Fuel and insurance are separate.",
+    "q3": "Do I need documents?",
+    "a3": "Yes, a valid driver's license and passport are required.",
+    "q4": "Can I cancel a booking?",
+    "a4": "Free cancellation is available up to 24 hours before. See terms for details."
+  },
+  "footer": {
+    "about": "About us",
+    "aboutText": "CarSharing is Uzbekistan's first P2P car rental platform",
+    "links": "Useful links",
+    "privacy": "Privacy policy",
+    "terms": "Terms of service",
+    "support": "Support",
+    "contact": "Contact us",
+    "regions": "Regions",
+    "copyright": "© {{year}} CarSharing. All rights reserved."
+  },
+  "search": {
+    "title": "Search cars",
+    "filters": "Filters",
+    "region": "Region",
+    "allRegions": "All regions",
+    "priceRange": "Price range",
+    "priceMin": "Min",
+    "priceMax": "Max",
+    "bodyType": "Body type",
+    "transmission": "Transmission",
+    "fuelType": "Fuel type",
+    "automatic": "Automatic",
+    "manual": "Manual",
+    "petrol": "Petrol",
+    "diesel": "Diesel",
+    "electric": "Electric",
+    "hybrid": "Hybrid",
+    "lpg": "LPG",
+    "sortBy": "Sort by",
+    "sortCheap": "Cheapest",
+    "sortExpensive": "Most expensive",
+    "sortNewest": "Newest",
+    "sortRating": "Top rated",
+    "results": "{{count}} results",
+    "noResults": "No results found",
+    "noResultsDesc": "Try adjusting your filters or selecting a different region",
+    "clearFilters": "Clear filters",
+    "perDay": "day"
+  },
+  "car": {
+    "perDay": "day",
+    "specs": "Specifications",
+    "description": "Description",
+    "features": "Features",
+    "rules": "Rules",
+    "reviews": "Reviews",
+    "location": "Location",
+    "host": "Host",
+    "memberSince": "Member since {{date}}",
+    "responseRate": "Response rate",
+    "trips": "Trips",
+    "bookNow": "Book now",
+    "selectDates": "Select dates",
+    "totalPrice": "Total",
+    "dailyRate": "Daily rate",
+    "cleaningFee": "Cleaning fee",
+    "serviceFee": "Service fee",
+    "year": "Year",
+    "mileage": "Mileage",
+    "seats": "Seats",
+    "transmission": "Transmission",
+    "fuelType": "Fuel",
+    "bodyType": "Body",
+    "noReviews": "No reviews yet",
+    "showAllPhotos": "Show all photos"
+  },
+  "booking": {
+    "title": "My bookings",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "active": "Active",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "cancel": "Cancel",
+    "approve": "Approve",
+    "reject": "Reject",
+    "message": "Message",
+    "pickup": "Pick-up date",
+    "dropoff": "Drop-off date",
+    "noDays": "{{count}} days"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone number",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginError": "Invalid email or password",
+    "registerSuccess": "Registration successful"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "viewDetails": "View details",
+    "som": "so'm",
+    "perDay": "day",
+    "km": "km"
+  }
+}

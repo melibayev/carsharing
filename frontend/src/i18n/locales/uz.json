@@ -1,0 +1,201 @@
+{
+  "app": {
+    "name": "CarSharing",
+    "tagline": "Xususiy avtomobillarni ijaraga oling"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "search": "Qidiruv",
+    "listYourCar": "Avtomobil qo'shish",
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "myBookings": "Bronlarim",
+    "myListings": "E'lonlarim",
+    "messages": "Xabarlar",
+    "profile": "Profil",
+    "logout": "Chiqish",
+    "darkMode": "Tungi rejim",
+    "lightMode": "Kunduzgi rejim"
+  },
+  "hero": {
+    "title": "O'zbekiston bo'ylab mashinani ijaraga oling",
+    "subtitle": "Minglab tasdiqlangan egalardan arzon narxlarda avtomobil tanlang",
+    "searchPlaceholder": "Qayerga borasiz?",
+    "dateFrom": "Qachondan",
+    "dateTo": "Qachongacha",
+    "search": "Qidirish"
+  },
+  "regions": {
+    "title": "Mashhur hududlar",
+    "subtitle": "O'zbekistonning go'zal shaharlarida avtomobil ijarasi",
+    "carsAvailable": "{{count}} ta mashina"
+  },
+  "howItWorks": {
+    "title": "Qanday ishlaydi?",
+    "step1Title": "Mashina tanlang",
+    "step1Desc": "Minglab variantlar ichidan o'zingizga mos mashinani toping",
+    "step2Title": "Bron qiling",
+    "step2Desc": "Sanalarni tanlang va bir necha daqiqada bron qiling",
+    "step3Title": "Haydang",
+    "step3Desc": "Kalitni oling va sayohatingizdan rohatlaning"
+  },
+  "featured": {
+    "title": "Tanlangan mashinalar",
+    "subtitle": "Eng mashhur va yuqori baholangan mashinalar",
+    "viewAll": "Hammasini ko'rish"
+  },
+  "categories": {
+    "title": "Kategoriyalar",
+    "sedan": "Sedan",
+    "suv": "SUV",
+    "hatchback": "Xetchbek",
+    "minivan": "Miniven",
+    "coupe": "Kupe",
+    "convertible": "Kabriolet",
+    "truck": "Yuk mashina",
+    "van": "Furgon"
+  },
+  "testimonials": {
+    "title": "Mijozlar fikrlari",
+    "subtitle": "Xizmatimizdan foydalanganlar nima deydi"
+  },
+  "hostCta": {
+    "title": "Mashinangiz bo'sh turganida pul ishlang",
+    "subtitle": "O'rtacha egalar oyiga 3 000 000 so'mdan ortiq ishlaydi",
+    "button": "Mashina qo'shish"
+  },
+  "stats": {
+    "title": "Raqamlarda CarSharing",
+    "cars": "Mashinalar",
+    "cities": "Shaharlar",
+    "users": "Foydalanuvchilar",
+    "bookings": "Bronlar"
+  },
+  "faq": {
+    "title": "Ko'p beriladigan savollar",
+    "q1": "CarSharing qanday ishlaydi?",
+    "a1": "CarSharing — bu xususiy avtomobil egalari va ijarachi o'rtasidagi platforma. Siz xohlagan mashinani tanlaysiz, bron qilasiz va olib ketasiz.",
+    "q2": "Narxlar qanday belgilanadi?",
+    "a2": "Narxlarni avtomobil egalari belgilaydi. Narx kuniga hisoblanadi va yoqilg'i, sug'urta alohida.",
+    "q3": "Hujjatlar kerakmi?",
+    "a3": "Ha, haydovchilik guvohnomasi va pasport talab qilinadi.",
+    "q4": "Bekor qilish mumkinmi?",
+    "a4": "Bepul bekor qilish 24 soatdan oldin mumkin. Batafsil shartlarni ko'ring."
+  },
+  "footer": {
+    "about": "Biz haqimizda",
+    "aboutText": "CarSharing — O'zbekistondagi birinchi P2P avtomobil ijarasi platformasi",
+    "links": "Foydali havolalar",
+    "privacy": "Maxfiylik siyosati",
+    "terms": "Foydalanish shartlari",
+    "support": "Yordam",
+    "contact": "Biz bilan bog'laning",
+    "regions": "Hududlar",
+    "copyright": "© {{year}} CarSharing. Barcha huquqlar himoyalangan."
+  },
+  "search": {
+    "title": "Mashinalar qidiruvi",
+    "filters": "Filtrlar",
+    "region": "Hudud",
+    "allRegions": "Barcha hududlar",
+    "priceRange": "Narx oralig'i",
+    "priceMin": "Minimal",
+    "priceMax": "Maksimal",
+    "bodyType": "Kuzov turi",
+    "transmission": "Uzatish qutisi",
+    "fuelType": "Yoqilg'i turi",
+    "automatic": "Avtomat",
+    "manual": "Mexanik",
+    "petrol": "Benzin",
+    "diesel": "Dizel",
+    "electric": "Elektr",
+    "hybrid": "Gibrid",
+    "lpg": "Gaz (LPG)",
+    "sortBy": "Saralash",
+    "sortCheap": "Arzonroq",
+    "sortExpensive": "Qimmatroq",
+    "sortNewest": "Eng yangi",
+    "sortRating": "Reyting bo'yicha",
+    "results": "{{count}} ta natija",
+    "noResults": "Hech narsa topilmadi",
+    "noResultsDesc": "Filtrlarni o'zgartiring yoki boshqa hududni tanlang",
+    "clearFilters": "Filtrlarni tozalash",
+    "perDay": "kun"
+  },
+  "car": {
+    "perDay": "kun",
+    "specs": "Xususiyatlar",
+    "description": "Tavsif",
+    "features": "Qulayliklar",
+    "rules": "Qoidalar",
+    "reviews": "Sharhlar",
+    "location": "Joylashuv",
+    "host": "Egasi",
+    "memberSince": "{{date}} dan beri a'zo",
+    "responseRate": "Javob tezligi",
+    "trips": "Sayohatlar",
+    "bookNow": "Bron qilish",
+    "selectDates": "Sanalarni tanlang",
+    "totalPrice": "Umumiy narx",
+    "dailyRate": "Kunlik narx",
+    "cleaningFee": "Tozalash to'lovi",
+    "serviceFee": "Xizmat to'lovi",
+    "year": "Yili",
+    "mileage": "Yurgan masofasi",
+    "seats": "O'rindiqlar",
+    "transmission": "Uzatish qutisi",
+    "fuelType": "Yoqilg'i",
+    "bodyType": "Kuzov",
+    "noReviews": "Hali sharhlar yo'q",
+    "showAllPhotos": "Barcha rasmlar"
+  },
+  "booking": {
+    "title": "Mening bronlarim",
+    "status": {
+      "pending": "Kutilmoqda",
+      "confirmed": "Tasdiqlangan",
+      "active": "Faol",
+      "completed": "Tugallangan",
+      "cancelled": "Bekor qilingan",
+      "rejected": "Rad etilgan"
+    },
+    "cancel": "Bekor qilish",
+    "approve": "Tasdiqlash",
+    "reject": "Rad etish",
+    "message": "Xabar yozish",
+    "pickup": "Olish sanasi",
+    "dropoff": "Qaytarish sanasi",
+    "noDays": "{{count}} kun"
+  },
+  "auth": {
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "email": "Elektron pochta",
+    "password": "Parol",
+    "confirmPassword": "Parolni tasdiqlang",
+    "firstName": "Ism",
+    "lastName": "Familiya",
+    "phone": "Telefon raqami",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "noAccount": "Hisobingiz yo'qmi?",
+    "hasAccount": "Hisobingiz bormi?",
+    "loginError": "Email yoki parol noto'g'ri",
+    "registerSuccess": "Muvaffaqiyatli ro'yxatdan o'tdingiz"
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "retry": "Qayta urinish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "back": "Orqaga",
+    "next": "Keyingisi",
+    "previous": "Oldingisi",
+    "viewDetails": "Batafsil",
+    "som": "so'm",
+    "perDay": "kun",
+    "km": "km"
+  }
+}

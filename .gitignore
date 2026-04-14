@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+out/
+*.js.map
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+*.msi
+*.msm
+*.msp
+project.lock.json
+*.nuget.props
+*.nuget.targets
+/backend/CarSharing.Api/wwwroot/uploads/*
+!/backend/CarSharing.Api/wwwroot/uploads/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Test results
+TestResults/
+coverage/
+
+# Docker
+docker-compose.override.yml

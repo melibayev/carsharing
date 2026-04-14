@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand: deep navy primary, terracotta accent */
+    --background: 0 0% 100%;
+    --foreground: 220 50% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 50% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 50% 7%;
+    --primary: 221 60% 14%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 225 20% 96%;
+    --secondary-foreground: 220 50% 7%;
+    --muted: 225 20% 96%;
+    --muted-foreground: 222 15% 40%;
+    --accent: 19 80% 51%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 19 100% 96%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 224 14% 91%;
+    --input: 224 14% 91%;
+    --ring: 19 80% 51%;
+    --radius: 0.625rem;
+    /* Custom surfaces */
+    --surface: 0 0% 100%;
+    --surface-2: 228 25% 97%;
+    --surface-3: 226 18% 94%;
+    --ink: 222 58% 9%;
+    --ink-muted: 222 12% 40%;
+    --success: 142 72% 37%;
+    --warning: 38 92% 50%;
+    --danger: 0 72% 51%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 19 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 222 30% 14%;
+    --muted-foreground: 220 15% 60%;
+    --accent: 19 80% 51%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 19 60% 12%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 30% 16%;
+    --input: 222 30% 16%;
+    --ring: 19 80% 55%;
+    --surface: 222 47% 6%;
+    --surface-2: 222 40% 9%;
+    --surface-3: 222 35% 12%;
+    --ink: 210 40% 96%;
+    --ink-muted: 220 15% 60%;
+    --success: 142 72% 37%;
+    --warning: 38 92% 50%;
+    --danger: 0 62% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
