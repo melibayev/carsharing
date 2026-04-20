@@ -205,7 +205,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold font-mono">{formatUzs(car.dailyPriceUsd, false)} so'm/day</p>
+                      <p className="font-bold font-mono">{formatUzs(car.dailyPriceUsd)}/day</p>
                     </div>
                   </CardContent>
                 </Card>

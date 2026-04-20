@@ -5,21 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Format a number as Uzbek so'm: "450 000 so'm"
- * The API stores values with a "Usd" suffix but we display as UZS.
- */
+/** Format a number as USD: "$450" */
 export function formatUzs(amount: number, suffix = true): string {
-  const formatted = new Intl.NumberFormat('uz-UZ', {
+  return new Intl.NumberFormat('en-US', {
+    style: suffix ? 'currency' : 'decimal',
+    currency: 'USD',
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-    useGrouping: true,
-  })
-    .format(amount)
-    .replace(/,/g, ' ');
-  return suffix ? `${formatted} so'm` : formatted;
+  }).format(amount);
 }
 
-/** Legacy USD formatter – kept for admin/debug screens */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

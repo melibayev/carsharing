@@ -28,7 +28,7 @@ export function RegionPicker({ value, onChange, placeholder, showAll = true }: R
         {showAll && <SelectItem value="all">All regions</SelectItem>}
         {REGIONS.map((r) => (
           <SelectItem key={r.code} value={r.code}>
-            {r.latin} — {r.capital}
+            {r.name} — {r.capital}
           </SelectItem>
         ))}
       </SelectContent>

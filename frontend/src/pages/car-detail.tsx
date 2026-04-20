@@ -302,7 +302,7 @@ export default function CarDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-baseline gap-2">
                 <span className="text-3xl font-mono">{formatUzs(car.dailyPriceUsd, false)}</span>
-                <span className="text-base text-muted-foreground font-normal">so'm/day</span>
+                <span className="text-base text-muted-foreground font-normal">/day</span>
               </CardTitle>
               {car.weeklyDiscountPercent > 0 && (
                 <p className="text-sm text-green-600">{car.weeklyDiscountPercent}% weekly discount</p>

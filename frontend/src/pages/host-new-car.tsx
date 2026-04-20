@@ -178,7 +178,7 @@ export default function HostNewCarPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Daily price (so'm)</Label>
+                <Label>Daily price (USD)</Label>
                 <Input type="number" {...register('dailyPriceUsd', { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">

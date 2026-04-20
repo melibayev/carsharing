@@ -339,7 +339,7 @@ export default function HomePage() {
             Earn money while your car sits idle
           </h2>
           <p className="text-lg text-white/80 max-w-xl mx-auto">
-            Hosts earn an average of 3,000,000 so'm per month
+            Hosts earn an average of $3,000 per month
           </p>
           <Button size="lg" variant="secondary" className="rounded-xl font-semibold" asChild>
             <Link to="/host/cars/new">
