@@ -52,6 +52,7 @@ public class DatabaseSeeder
         await SeedNotificationsAsync();
         await SeedKycVerificationsAsync();
         await SeedDisputesAsync();
+        await SeedOnboardingUsersAsync();
 
         _logger.LogInformation("Database seeding completed. {UserCount} users, {CarCount} cars, {BookingCount} bookings.",
             _users.Count, _cars.Count, _bookings.Count);
@@ -754,5 +755,88 @@ public class DatabaseSeeder
         }
 
         await _db.SaveChangesAsync();
+    }
+
+    private async Task SeedOnboardingUsersAsync()
+    {
+        // 2x Step1Done - just registered via the wizard
+        var s1a = await CreateUserAsync("onboard.step1a@example.com", "Password1!", "Alex", "Morgan", "Just signed up", true, false);
+        await _userManager.AddToRoleAsync(s1a, "User");
+        s1a.OnboardingStatus = ProfileCompletionStatus.Step1Done;
+
+        var s1b = await CreateUserAsync("onboard.step1b@example.com", "Password1!", "Taylor", "Smith", "New user", true, false);
+        await _userManager.AddToRoleAsync(s1b, "User");
+        s1b.OnboardingStatus = ProfileCompletionStatus.Step1Done;
+
+        // 2x Step2Done - filled personal details
+        var s2a = await CreateUserAsync("onboard.step2a@example.com", "Password1!", "Jordan", "Lee", "Filled my details", true, false);
+        await _userManager.AddToRoleAsync(s2a, "User");
+        s2a.OnboardingStatus = ProfileCompletionStatus.Step2Done;
+        s2a.MiddleName = "Michael";
+        s2a.AddressLine1 = "123 Main Street";
+        s2a.AddressCity = "Tashkent";
+        s2a.AddressRegion = "TSH";
+        s2a.AddressPostalCode = "100000";
+
+        var s2b = await CreateUserAsync("onboard.step2b@example.com", "Password1!", "Casey", "Brown", "Working on profile", true, false);
+        await _userManager.AddToRoleAsync(s2b, "User");
+        s2b.OnboardingStatus = ProfileCompletionStatus.Step2Done;
+        s2b.AddressLine1 = "456 Oak Avenue";
+        s2b.AddressCity = "Samarkand";
+        s2b.AddressRegion = "SAM";
+        s2b.AddressPostalCode = "140100";
+
+        // 3x Step3Done - uploaded license
+        var s3a = await CreateUserAsync("onboard.step3a@example.com", "Password1!", "Riley", "Davis", "License uploaded", true, false);
+        await _userManager.AddToRoleAsync(s3a, "User");
+        s3a.OnboardingStatus = ProfileCompletionStatus.Step3Done;
+        s3a.DriverLicenseNumber = "DL-001234";
+        s3a.DriverLicenseExpiry = DateTimeOffset.UtcNow.AddYears(3);
+        s3a.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License";
+
+        var s3b = await CreateUserAsync("onboard.step3b@example.com", "Password1!", "Morgan", "Wilson", "License done", true, false);
+        await _userManager.AddToRoleAsync(s3b, "User");
+        s3b.OnboardingStatus = ProfileCompletionStatus.Step3Done;
+        s3b.DriverLicenseNumber = "DL-005678";
+        s3b.DriverLicenseExpiry = DateTimeOffset.UtcNow.AddYears(2);
+        s3b.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License";
+
+        var s3c = await CreateUserAsync("onboard.step3c@example.com", "Password1!", "Quinn", "Johnson", "License ready", true, false);
+        await _userManager.AddToRoleAsync(s3c, "User");
+        s3c.OnboardingStatus = ProfileCompletionStatus.Step3Done;
+        s3c.DriverLicenseNumber = "DL-009012";
+        s3c.DriverLicenseExpiry = DateTimeOffset.UtcNow.AddYears(4);
+        s3c.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License";
+
+        // 2x Step4Done - uploaded ID
+        var s4a = await CreateUserAsync("onboard.step4a@example.com", "Password1!", "Avery", "Taylor", "ID verified", true, false);
+        await _userManager.AddToRoleAsync(s4a, "User");
+        s4a.OnboardingStatus = ProfileCompletionStatus.Step4Done;
+        s4a.NationalIdNumber = "AA1234567";
+        s4a.NationalIdFrontUrl = "https://placehold.co/600x400/png?text=ID+Front";
+        s4a.NationalIdBackUrl = "https://placehold.co/600x400/png?text=ID+Back";
+        s4a.SelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
+
+        var s4b = await CreateUserAsync("onboard.step4b@example.com", "Password1!", "Dakota", "Anderson", "Almost done", true, false);
+        await _userManager.AddToRoleAsync(s4b, "User");
+        s4b.OnboardingStatus = ProfileCompletionStatus.Step4Done;
+        s4b.NationalIdNumber = "AB7654321";
+        s4b.NationalIdFrontUrl = "https://placehold.co/600x400/png?text=ID+Front";
+        s4b.SelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
+
+        // 1x Complete - fully onboarded
+        var comp = await CreateUserAsync("onboard.complete@example.com", "Password1!", "Sam", "Martinez", "Fully onboarded", true, true);
+        await _userManager.AddToRoleAsync(comp, "User");
+        comp.OnboardingStatus = ProfileCompletionStatus.Complete;
+        comp.PaymentMethodLast4 = "4242";
+        comp.PaymentMethodBrand = "Visa";
+
+        // 1x Rejected
+        var rej = await CreateUserAsync("onboard.rejected@example.com", "Password1!", "Jamie", "Clark", "Rejected submission", true, false);
+        await _userManager.AddToRoleAsync(rej, "User");
+        rej.OnboardingStatus = ProfileCompletionStatus.Rejected;
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Seeded {Count} onboarding users at various stages.", 11);
     }
 }
