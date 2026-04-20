@@ -50,6 +50,8 @@ public class DatabaseSeeder
         await SeedReviewsAsync();
         await SeedConversationsAsync();
         await SeedNotificationsAsync();
+        await SeedKycVerificationsAsync();
+        await SeedDisputesAsync();
 
         _logger.LogInformation("Database seeding completed. {UserCount} users, {CarCount} cars, {BookingCount} bookings.",
             _users.Count, _cars.Count, _bookings.Count);
@@ -656,4 +658,101 @@ public class DatabaseSeeder
         NotificationType.ListingRejected => "Your car listing needs some changes before it can go live.",
         _ => "You have a new notification.",
     };
+
+    private async Task SeedKycVerificationsAsync()
+    {
+        var regularUsers = _users.Where(u =>
+            u.Email != "admin@CarSharing.dev").ToList();
+
+        // Some users have approved KYC
+        foreach (var user in regularUsers.Take(10))
+        {
+            _db.KycVerifications.Add(new KycVerification
+            {
+                UserId = user.Id,
+                DocumentType = _rng.NextDouble() > 0.5 ? KycDocumentType.Passport : KycDocumentType.DriverLicense,
+                DocumentFrontUrl = "https://placehold.co/600x400/png?text=ID+Front",
+                DocumentBackUrl = "https://placehold.co/600x400/png?text=ID+Back",
+                SelfieUrl = "https://placehold.co/400x400/png?text=Selfie",
+                DocumentNumber = $"AA{_rng.Next(1000000, 9999999)}",
+                DocumentExpiry = DateTimeOffset.UtcNow.AddYears(_rng.Next(1, 5)),
+                Status = KycStatus.Approved,
+                ReviewedAt = DateTimeOffset.UtcNow.AddDays(-_rng.Next(10, 90)),
+                CreatedAt = DateTimeOffset.UtcNow.AddDays(-_rng.Next(30, 120)),
+            });
+        }
+
+        // Some pending
+        foreach (var user in regularUsers.Skip(10).Take(5))
+        {
+            _db.KycVerifications.Add(new KycVerification
+            {
+                UserId = user.Id,
+                DocumentType = KycDocumentType.NationalId,
+                DocumentFrontUrl = "https://placehold.co/600x400/png?text=NatID+Front",
+                DocumentBackUrl = "https://placehold.co/600x400/png?text=NatID+Back",
+                SelfieUrl = "https://placehold.co/400x400/png?text=Selfie",
+                DocumentNumber = $"AB{_rng.Next(1000000, 9999999)}",
+                DocumentExpiry = DateTimeOffset.UtcNow.AddYears(3),
+                Status = KycStatus.Pending,
+                CreatedAt = DateTimeOffset.UtcNow.AddDays(-_rng.Next(1, 10)),
+            });
+        }
+
+        // One rejected
+        if (regularUsers.Count > 15)
+        {
+            _db.KycVerifications.Add(new KycVerification
+            {
+                UserId = regularUsers[15].Id,
+                DocumentType = KycDocumentType.Passport,
+                DocumentFrontUrl = "https://placehold.co/600x400/png?text=Blurry+Photo",
+                Status = KycStatus.Rejected,
+                RejectionReason = "Document photo is blurry and unreadable. Please resubmit with a clear photo.",
+                ReviewedAt = DateTimeOffset.UtcNow.AddDays(-5),
+                CreatedAt = DateTimeOffset.UtcNow.AddDays(-15),
+            });
+        }
+
+        await _db.SaveChangesAsync();
+    }
+
+    private async Task SeedDisputesAsync()
+    {
+        var completedBookings = _bookings.Where(b => b.Status == BookingStatus.Completed).ToList();
+        if (completedBookings.Count < 5) return;
+
+        var disputeData = new[]
+        {
+            (DisputeCategory.VehicleDamage, "Found a scratch on the rear bumper that was not there before the trip. Photos attached."),
+            (DisputeCategory.CleanlinessIssue, "The car was returned with significant mud and dirt inside. Requires professional cleaning."),
+            (DisputeCategory.LateFee, "Guest returned the vehicle 6 hours late without prior notification."),
+            (DisputeCategory.WrongVehicle, "The vehicle provided was a different color than advertised in the listing."),
+            (DisputeCategory.SafetyIssue, "Check engine light was on during the trip. Felt unsafe driving."),
+        };
+
+        for (var i = 0; i < Math.Min(5, completedBookings.Count); i++)
+        {
+            var booking = completedBookings[i];
+            var car = _cars.First(c => c.Id == booking.CarId);
+            var (category, description) = disputeData[i];
+
+            var dispute = new Dispute
+            {
+                BookingId = booking.Id,
+                FiledById = i % 2 == 0 ? car.OwnerId : booking.GuestId,
+                Category = category,
+                Description = description,
+                Status = i < 2 ? DisputeStatus.Open : i < 4 ? DisputeStatus.InReview : DisputeStatus.Resolved,
+                Resolution = i == 4 ? "Partial refund issued. Maintenance inspection required for the vehicle." : null,
+                RefundAmount = i == 4 ? 50000m : null,
+                ResolvedAt = i == 4 ? DateTimeOffset.UtcNow.AddDays(-2) : null,
+                CreatedAt = DateTimeOffset.UtcNow.AddDays(-_rng.Next(1, 20)),
+            };
+
+            _db.Disputes.Add(dispute);
+        }
+
+        await _db.SaveChangesAsync();
+    }
 }
