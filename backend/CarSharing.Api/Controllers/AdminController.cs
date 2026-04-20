@@ -5,6 +5,9 @@ using CarSharing.Api.Hubs;
 using CarSharing.Api.Models.Dtos;
 using CarSharing.Api.Models.Entities;
 using CarSharing.Api.Models.Enums;
+using CarSharing.Api.Services.Audit;
+using CarSharing.Api.Services.Disputes;
+using CarSharing.Api.Services.Verification;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,14 +25,21 @@ public class AdminController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IMapper _mapper;
     private readonly IHubContext<AdminHub> _adminHub;
+    private readonly IKycService _kycService;
+    private readonly IAuditService _auditService;
+    private readonly IDisputeService _disputeService;
 
     public AdminController(AppDbContext db, UserManager<ApplicationUser> userManager,
-        IMapper mapper, IHubContext<AdminHub> adminHub)
+        IMapper mapper, IHubContext<AdminHub> adminHub,
+        IKycService kycService, IAuditService auditService, IDisputeService disputeService)
     {
         _db = db;
         _userManager = userManager;
         _mapper = mapper;
         _adminHub = adminHub;
+        _kycService = kycService;
+        _auditService = auditService;
+        _disputeService = disputeService;
     }
 
     [HttpGet("metrics")]
@@ -198,27 +208,114 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("disputes")]
-    public async Task<ActionResult<List<BookingDto>>> GetDisputes()
+    public async Task<ActionResult<PagedResult<DisputeDto>>> GetDisputes(
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var bookings = await _db.Bookings
-            .Include(b => b.Car).ThenInclude(c => c.Photos)
-            .Include(b => b.Car).ThenInclude(c => c.Owner)
-            .Include(b => b.Guest)
-            .Where(b => b.Status == BookingStatus.Disputed)
-            .OrderBy(b => b.CreatedAt)
-            .ToListAsync();
+        var result = await _disputeService.GetAllAsync(status, page, pageSize);
+        return Ok(result);
+    }
 
-        return Ok(_mapper.Map<List<BookingDto>>(bookings));
+    [HttpGet("disputes/{id:guid}")]
+    public async Task<ActionResult<DisputeDto>> GetDispute(Guid id)
+    {
+        var dispute = await _disputeService.GetByIdAsync(id);
+        return Ok(dispute);
     }
 
     [HttpPost("disputes/{id:guid}/resolve")]
-    public async Task<IActionResult> ResolveDispute(Guid id)
+    public async Task<ActionResult<DisputeDto>> ResolveDispute(Guid id, [FromBody] ResolveDisputeRequest request)
     {
-        var booking = await _db.Bookings.FindAsync(id);
-        if (booking == null) return NotFound();
+        var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _disputeService.ResolveAsync(id, request, adminId);
+        await _auditService.LogAsync("ResolveDispute", "Dispute", id, adminId, User.FindFirstValue(ClaimTypes.Email));
+        return Ok(result);
+    }
 
-        booking.Status = BookingStatus.Completed;
-        await _db.SaveChangesAsync();
-        return Ok();
+    [HttpPost("disputes/{id:guid}/escalate")]
+    public async Task<ActionResult<DisputeDto>> EscalateDispute(Guid id)
+    {
+        var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _disputeService.EscalateAsync(id, adminId);
+        return Ok(result);
+    }
+
+    // === KYC Verification ===
+    [HttpGet("verifications")]
+    public async Task<ActionResult<PagedResult<KycVerificationDto>>> GetVerifications(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _kycService.GetPendingAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    [HttpPost("verifications/{id:guid}/review")]
+    public async Task<ActionResult<KycVerificationDto>> ReviewVerification(
+        Guid id, [FromBody] ReviewKycRequest request)
+    {
+        var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _kycService.ReviewAsync(id, request, adminId);
+        await _auditService.LogAsync(
+            request.Approved ? "ApproveKyc" : "RejectKyc",
+            "KycVerification", id, adminId, User.FindFirstValue(ClaimTypes.Email));
+        return Ok(result);
+    }
+
+    // === Audit Logs ===
+    [HttpGet("audit-logs")]
+    public async Task<ActionResult<PagedResult<AuditLogDto>>> GetAuditLogs(
+        [FromQuery] string? entityType, [FromQuery] Guid? entityId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        var result = await _auditService.GetLogsAsync(entityType, entityId, page, pageSize);
+        return Ok(result);
+    }
+
+    // === Finance ===
+    [HttpGet("finance")]
+    public async Task<ActionResult<AdminFinanceDto>> GetFinance()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var totalRevenue = await _db.Bookings
+            .Where(b => b.Status == BookingStatus.Completed)
+            .SumAsync(b => b.ServiceFeeUsd);
+
+        var monthlyRevenue = await _db.Bookings
+            .Where(b => b.Status == BookingStatus.Completed && b.CompletedAt >= monthStart)
+            .SumAsync(b => b.ServiceFeeUsd);
+
+        var pendingPayouts = await _db.PayoutRecords
+            .Where(p => p.Status == PayoutStatus.Pending)
+            .SumAsync(p => p.AmountUsd);
+
+        var totalPayouts = await _db.PayoutRecords
+            .Where(p => p.Status == PayoutStatus.Completed)
+            .SumAsync(p => p.AmountUsd);
+
+        var completedBookings = await _db.Bookings
+            .CountAsync(b => b.Status == BookingStatus.Completed);
+
+        var avgBookingValue = completedBookings > 0
+            ? await _db.Bookings.Where(b => b.Status == BookingStatus.Completed).AverageAsync(b => b.TotalChargedUsd)
+            : 0;
+
+        // Last 12 months breakdown
+        var twelveMonthsAgo = now.AddMonths(-12);
+        var monthlyBreakdown = await _db.Bookings
+            .Where(b => b.Status == BookingStatus.Completed && b.CompletedAt >= twelveMonthsAgo)
+            .GroupBy(b => new { b.CompletedAt!.Value.Year, b.CompletedAt!.Value.Month })
+            .Select(g => new MonthlyRevenueDto(
+                g.Key.Year, g.Key.Month,
+                g.Sum(b => b.ServiceFeeUsd),
+                g.Sum(b => b.HostPayoutUsd),
+                g.Count()))
+            .OrderBy(m => m.Year).ThenBy(m => m.Month)
+            .ToListAsync();
+
+        return Ok(new AdminFinanceDto(
+            totalRevenue, monthlyRevenue, pendingPayouts,
+            totalPayouts, completedBookings, avgBookingValue,
+            monthlyBreakdown));
     }
 }
