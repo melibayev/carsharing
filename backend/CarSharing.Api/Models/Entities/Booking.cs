@@ -44,4 +44,5 @@ public class Booking : AuditableEntity
     public Conversation? Conversation { get; set; }
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public Availability? AvailabilityBlock { get; set; }
+    public ICollection<Dispute> Disputes { get; set; } = new List<Dispute>();
 }

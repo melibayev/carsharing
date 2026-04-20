@@ -87,3 +87,39 @@ public enum PayoutStatus
     Completed,
     Failed
 }
+
+public enum KycStatus
+{
+    Pending,
+    InReview,
+    Approved,
+    Rejected,
+    Expired
+}
+
+public enum KycDocumentType
+{
+    Passport,
+    DriverLicense,
+    NationalId
+}
+
+public enum DisputeStatus
+{
+    Open,
+    InReview,
+    Resolved,
+    Escalated,
+    Closed
+}
+
+public enum DisputeCategory
+{
+    VehicleDamage,
+    CleanlinessIssue,
+    LateFee,
+    WrongVehicle,
+    CancellationDispute,
+    SafetyIssue,
+    Other
+}

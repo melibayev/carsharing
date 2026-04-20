@@ -22,6 +22,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PayoutRecord> PayoutRecords => Set<PayoutRecord>();
     public DbSet<FavoriteCar> FavoriteCars => Set<FavoriteCar>();
+    public DbSet<KycVerification> KycVerifications => Set<KycVerification>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Dispute> Disputes => Set<Dispute>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

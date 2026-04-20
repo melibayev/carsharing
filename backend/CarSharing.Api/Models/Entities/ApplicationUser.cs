@@ -35,4 +35,6 @@ public class ApplicationUser : IdentityUser<Guid>
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<FavoriteCar> FavoriteCars { get; set; } = new List<FavoriteCar>();
     public ICollection<PayoutRecord> Payouts { get; set; } = new List<PayoutRecord>();
+    public ICollection<KycVerification> KycVerifications { get; set; } = new List<KycVerification>();
+    public ICollection<Dispute> FiledDisputes { get; set; } = new List<Dispute>();
 }

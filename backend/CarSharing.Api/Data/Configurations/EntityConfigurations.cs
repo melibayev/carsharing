@@ -198,3 +198,55 @@ public class FavoriteCarConfiguration : IEntityTypeConfiguration<FavoriteCar>
         builder.HasOne(f => f.Car).WithMany(c => c.FavoritedBy).HasForeignKey(f => f.CarId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+public class KycVerificationConfiguration : IEntityTypeConfiguration<KycVerification>
+{
+    public void Configure(EntityTypeBuilder<KycVerification> builder)
+    {
+        builder.Property(k => k.DocumentFrontUrl).HasMaxLength(500).IsRequired();
+        builder.Property(k => k.DocumentBackUrl).HasMaxLength(500);
+        builder.Property(k => k.SelfieUrl).HasMaxLength(500);
+        builder.Property(k => k.DocumentNumber).HasMaxLength(100);
+        builder.Property(k => k.RejectionReason).HasMaxLength(1000);
+        builder.Property(k => k.Notes).HasMaxLength(2000);
+
+        builder.HasOne(k => k.User).WithMany(u => u.KycVerifications).HasForeignKey(k => k.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(k => k.ReviewedBy).WithMany().HasForeignKey(k => k.ReviewedById).OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(k => new { k.UserId, k.Status });
+    }
+}
+
+public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
+{
+    public void Configure(EntityTypeBuilder<AuditLog> builder)
+    {
+        builder.Property(a => a.Action).HasMaxLength(100).IsRequired();
+        builder.Property(a => a.EntityType).HasMaxLength(100).IsRequired();
+        builder.Property(a => a.ActorEmail).HasMaxLength(256);
+        builder.Property(a => a.IpAddress).HasMaxLength(50);
+        builder.Property(a => a.UserAgent).HasMaxLength(500);
+
+        builder.HasOne(a => a.Actor).WithMany().HasForeignKey(a => a.ActorId).OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(a => a.CreatedAt);
+        builder.HasIndex(a => new { a.EntityType, a.EntityId });
+    }
+}
+
+public class DisputeConfiguration : IEntityTypeConfiguration<Dispute>
+{
+    public void Configure(EntityTypeBuilder<Dispute> builder)
+    {
+        builder.Property(d => d.Description).HasMaxLength(2000).IsRequired();
+        builder.Property(d => d.Resolution).HasMaxLength(2000);
+        builder.Property(d => d.RefundAmount).HasColumnType("decimal(18,2)");
+
+        builder.HasOne(d => d.Booking).WithMany(b => b.Disputes).HasForeignKey(d => d.BookingId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(d => d.FiledBy).WithMany(u => u.FiledDisputes).HasForeignKey(d => d.FiledById).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(d => d.ResolvedBy).WithMany().HasForeignKey(d => d.ResolvedById).OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(d => d.Status);
+        builder.HasIndex(d => d.BookingId);
+    }
+}
