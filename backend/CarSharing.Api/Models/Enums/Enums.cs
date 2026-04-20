@@ -123,3 +123,13 @@ public enum DisputeCategory
     SafetyIssue,
     Other
 }
+
+public enum ProfileCompletionStatus
+{
+    Step1Done,
+    Step2Done,
+    Step3Done,
+    Step4Done,
+    Complete,
+    Rejected
+}

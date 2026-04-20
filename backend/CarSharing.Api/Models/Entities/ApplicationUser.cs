@@ -1,3 +1,4 @@
+using CarSharing.Api.Models.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace CarSharing.Api.Models.Entities;
@@ -23,6 +24,20 @@ public class ApplicationUser : IdentityUser<Guid>
     public int CancellationCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    // Onboarding fields
+    public ProfileCompletionStatus? OnboardingStatus { get; set; }
+    public string? MiddleName { get; set; }
+    public string? AddressLine1 { get; set; }
+    public string? AddressCity { get; set; }
+    public string? AddressRegion { get; set; }
+    public string? AddressPostalCode { get; set; }
+    public string? NationalIdNumber { get; set; }
+    public string? NationalIdFrontUrl { get; set; }
+    public string? NationalIdBackUrl { get; set; }
+    public string? SelfieUrl { get; set; }
+    public string? PaymentMethodLast4 { get; set; }
+    public string? PaymentMethodBrand { get; set; }
 
     public string FullName => $"{FirstName} {LastName}";
 

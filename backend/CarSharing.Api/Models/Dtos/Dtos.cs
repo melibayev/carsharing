@@ -381,3 +381,44 @@ public record AdminFinanceDto(
     List<MonthlyRevenueDto> MonthlyBreakdown);
 
 public record MonthlyRevenueDto(int Year, int Month, decimal Revenue, decimal Payouts, int Bookings);
+
+// === Onboarding DTOs ===
+public class OnboardingStatusDto
+{
+    public ProfileCompletionStatus? Status { get; set; }
+    public int CurrentStep { get; set; }
+    public bool IsComplete { get; set; }
+    public string Email { get; set; } = "";
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+}
+
+public record OnboardingStep2Request(
+    string FirstName,
+    string LastName,
+    string? MiddleName,
+    DateTimeOffset DateOfBirth,
+    string PhoneNumber,
+    string AddressLine1,
+    string AddressCity,
+    string AddressRegion,
+    string AddressPostalCode);
+
+public record OnboardingStep3Request(
+    string DriverLicenseNumber,
+    DateTimeOffset DriverLicenseExpiry,
+    string DriverLicensePhotoUrl);
+
+public record OnboardingStep4Request(
+    string NationalIdNumber,
+    string NationalIdFrontUrl,
+    string? NationalIdBackUrl,
+    string SelfieUrl);
+
+public record OnboardingStep5Request(
+    string PaymentMethodLast4,
+    string PaymentMethodBrand);
+
+public record DocumentUploadResponse(string Url);
+
+public record EmailAvailableResponse(bool Available);
