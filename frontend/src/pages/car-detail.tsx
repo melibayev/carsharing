@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   Star, MapPin, Calendar, Shield, Fuel, Cog, Users, Zap,
   ChevronLeft, ChevronRight, Car, Image as ImageIcon,
@@ -22,7 +21,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Transmission, FuelType } from '@/types';
 
 export default function CarDetailPage() {
-  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,11 +52,11 @@ export default function CarDetailPage() {
       },
       {
         onSuccess: (booking) => {
-          toast({ title: car.isInstantBook ? t('booking.status.confirmed') : t('booking.status.pending'), description: car.isInstantBook ? 'Bron tasdiqlandi.' : 'Egasi javobini kuting.' });
+          toast({ title: car.isInstantBook ? 'Confirmed' : 'Pending approval', description: car.isInstantBook ? 'Your booking is confirmed.' : 'Waiting for host approval.' });
           navigate(`/bookings/${booking.id}`);
         },
         onError: () => {
-          toast({ title: t('common.error'), description: 'Boshqa sanalarni tanlang.', variant: 'destructive' });
+          toast({ title: 'Error', description: 'Please choose different dates.', variant: 'destructive' });
         },
       },
     );
@@ -84,8 +82,8 @@ export default function CarDetailPage() {
     return (
       <div className="container py-16 text-center space-y-4">
         <Car className="h-16 w-16 mx-auto text-muted-foreground" />
-        <h2 className="text-2xl font-heading font-bold">{t('search.noResults')}</h2>
-        <Button onClick={() => navigate('/search')}>{t('nav.search')}</Button>
+        <h2 className="text-2xl font-heading font-bold">Car not found</h2>
+        <Button onClick={() => navigate('/search')}>Search cars</Button>
       </div>
     );
   }
@@ -93,6 +91,9 @@ export default function CarDetailPage() {
   const photos = car.photos.length > 0
     ? car.photos.sort((a, b) => a.sortOrder - b.sortOrder).map((p) => p.url)
     : [];
+
+  const transmissionLabel = car.transmission === Transmission.Automatic ? 'Automatic' : 'Manual';
+  const fuelLabel = car.fuelType === FuelType.Electric ? 'Electric' : car.fuelType === FuelType.Diesel ? 'Diesel' : car.fuelType === FuelType.Hybrid ? 'Hybrid' : 'Gasoline';
 
   return (
     <div className="container py-8 space-y-8">
@@ -136,9 +137,8 @@ export default function CarDetailPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Left Column: Tabbed Details */}
+        {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Title & meta */}
           <div>
             <div className="flex items-start justify-between">
               <div>
@@ -153,7 +153,7 @@ export default function CarDetailPage() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    {car.averageRating > 0 ? `${car.averageRating.toFixed(1)} (${car.tripCount} ${t('car.trips').toLowerCase()})` : 'Yangi'}
+                    {car.averageRating > 0 ? `${car.averageRating.toFixed(1)} (${car.tripCount} trips)` : 'New'}
                   </span>
                 </div>
               </div>
@@ -166,10 +166,10 @@ export default function CarDetailPage() {
           {/* Specs grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: Car, label: t('car.bodyType'), value: car.bodyType },
-              { icon: Users, label: t('car.seats'), value: `${car.seats}` },
-              { icon: Cog, label: t('car.transmission'), value: car.transmission === Transmission.Automatic ? t('search.automatic') : t('search.manual') },
-              { icon: Fuel, label: t('car.fuelType'), value: car.fuelType === FuelType.Electric ? t('search.electric') : car.fuelType === FuelType.Diesel ? t('search.diesel') : car.fuelType === FuelType.Hybrid ? t('search.hybrid') : t('search.petrol') },
+              { icon: Car, label: 'Body type', value: car.bodyType },
+              { icon: Users, label: 'Seats', value: `${car.seats}` },
+              { icon: Cog, label: 'Transmission', value: transmissionLabel },
+              { icon: Fuel, label: 'Fuel type', value: fuelLabel },
             ].map((spec) => (
               <div key={spec.label} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                 <spec.icon className="h-5 w-5 text-accent shrink-0" />
@@ -186,34 +186,32 @@ export default function CarDetailPage() {
           {/* Tabs */}
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="w-full justify-start">
-              <TabsTrigger value="description">{t('car.description')}</TabsTrigger>
-              <TabsTrigger value="features">{t('car.features')}</TabsTrigger>
-              <TabsTrigger value="rules">{t('car.rules')}</TabsTrigger>
-              <TabsTrigger value="reviews">{t('car.reviews')}{car.reviews.length > 0 ? ` (${car.reviews.length})` : ''}</TabsTrigger>
+              <TabsTrigger value="description">Description</TabsTrigger>
+              <TabsTrigger value="features">Features</TabsTrigger>
+              <TabsTrigger value="rules">Rules</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews{car.reviews.length > 0 ? ` (${car.reviews.length})` : ''}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="description" className="space-y-6 pt-4">
               {car.description && (
                 <p className="text-muted-foreground whitespace-pre-line leading-relaxed">{car.description}</p>
               )}
-
-              {/* Additional specs */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {car.year && (
                   <div className="p-3 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground">{t('car.year')}</p>
+                    <p className="text-xs text-muted-foreground">Year</p>
                     <p className="font-medium">{car.year}</p>
                   </div>
                 )}
                 {car.odometerKm && (
                   <div className="p-3 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground">{t('car.mileage')}</p>
-                    <p className="font-medium font-mono">{car.odometerKm.toLocaleString()} {t('common.km')}</p>
+                    <p className="text-xs text-muted-foreground">Mileage</p>
+                    <p className="font-medium font-mono">{car.odometerKm.toLocaleString()} km</p>
                   </div>
                 )}
                 {car.color && (
                   <div className="p-3 rounded-xl bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Rang</p>
+                    <p className="text-xs text-muted-foreground">Color</p>
                     <p className="font-medium">{car.color}</p>
                   </div>
                 )}
@@ -228,7 +226,7 @@ export default function CarDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">{t('car.noReviews')}</p>
+                <p className="text-muted-foreground">No features listed</p>
               )}
             </TabsContent>
 
@@ -236,7 +234,7 @@ export default function CarDetailPage() {
               {car.rules ? (
                 <p className="text-muted-foreground whitespace-pre-line">{car.rules}</p>
               ) : (
-                <p className="text-muted-foreground">—</p>
+                <p className="text-muted-foreground">-</p>
               )}
             </TabsContent>
 
@@ -269,7 +267,7 @@ export default function CarDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">{t('car.noReviews')}</p>
+                <p className="text-muted-foreground">No reviews yet</p>
               )}
             </TabsContent>
           </Tabs>
@@ -284,14 +282,14 @@ export default function CarDetailPage() {
                 <AvatarFallback>{getInitials(car.host.firstName)}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-heading font-semibold">{t('car.host')}: {car.host.firstName}</p>
+                <p className="font-heading font-semibold">Hosted by {car.host.firstName}</p>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                    {car.host.averageRatingAsHost > 0 ? car.host.averageRatingAsHost.toFixed(1) : 'Yangi'}
+                    {car.host.averageRatingAsHost > 0 ? car.host.averageRatingAsHost.toFixed(1) : 'New'}
                   </span>
-                  <span>{car.host.hostTripCount} {t('car.trips').toLowerCase()}</span>
-                  <span>{t('car.memberSince', { date: formatDate(car.host.createdAt) })}</span>
+                  <span>{car.host.hostTripCount} trips</span>
+                  <span>Joined {formatDate(car.host.createdAt)}</span>
                 </div>
               </div>
             </div>
@@ -304,19 +302,19 @@ export default function CarDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-baseline gap-2">
                 <span className="text-3xl font-mono">{formatUzs(car.dailyPriceUsd, false)}</span>
-                <span className="text-base text-muted-foreground font-normal">so'm/{t('common.perDay')}</span>
+                <span className="text-base text-muted-foreground font-normal">so'm/day</span>
               </CardTitle>
               {car.weeklyDiscountPercent > 0 && (
-                <p className="text-sm text-green-600">{car.weeklyDiscountPercent}% haftalik chegirma</p>
+                <p className="text-sm text-green-600">{car.weeklyDiscountPercent}% weekly discount</p>
               )}
               {car.monthlyDiscountPercent > 0 && (
-                <p className="text-sm text-green-600">{car.monthlyDiscountPercent}% oylik chegirma</p>
+                <p className="text-sm text-green-600">{car.monthlyDiscountPercent}% monthly discount</p>
               )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label>{t('booking.pickup')}</Label>
+                  <Label>Pick-up</Label>
                   <Input
                     type="date"
                     value={startDate}
@@ -326,7 +324,7 @@ export default function CarDetailPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>{t('booking.dropoff')}</Label>
+                  <Label>Drop-off</Label>
                   <Input
                     type="date"
                     value={endDate}
@@ -347,43 +345,43 @@ export default function CarDetailPage() {
               {quote && (
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>{formatUzs(quote.dailyRateUsd, false)} × {quote.days} {t('common.perDay')}</span>
+                    <span>{formatUzs(quote.dailyRateUsd, false)} x {quote.days} days</span>
                     <span className="font-mono">{formatUzs(quote.subtotalUsd)}</span>
                   </div>
                   {quote.discountAmount && quote.discountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
-                      <span>Chegirma</span>
+                      <span>Discount</span>
                       <span className="font-mono">-{formatUzs(quote.discountAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span>{t('car.cleaningFee')}</span>
+                    <span>Cleaning fee</span>
                     <span className="font-mono">{formatUzs(quote.cleaningFeeUsd)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>{t('car.serviceFee')}</span>
+                    <span>Service fee</span>
                     <span className="font-mono">{formatUzs(quote.serviceFeeUsd)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Soliq</span>
+                    <span>Tax</span>
                     <span className="font-mono">{formatUzs(quote.taxesUsd)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold text-base">
-                    <span>{t('car.totalPrice')}</span>
+                    <span>Total</span>
                     <span className="font-mono">{formatUzs(quote.totalChargedUsd)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <Shield className="h-3 w-3" />
-                    {formatUzs(quote.securityDepositHoldUsd)} qaytariladigan depozit
+                    {formatUzs(quote.securityDepositHoldUsd)} refundable deposit
                   </p>
                 </div>
               )}
 
               <div className="space-y-1">
-                <Label>Egaga xabar (ixtiyoriy)</Label>
+                <Label>Message to host (optional)</Label>
                 <Input
-                  placeholder="O'zingizni tanishtiring..."
+                  placeholder="Introduce yourself..."
                   value={guestMessage}
                   onChange={(e) => setGuestMessage(e.target.value)}
                   className="rounded-lg"
@@ -399,23 +397,23 @@ export default function CarDetailPage() {
                 {bookingMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 animate-spin" />
-                    {t('common.loading')}
+                    Loading...
                   </span>
                 ) : car.isInstantBook ? (
                   <span className="flex items-center gap-2">
                     <Zap className="h-4 w-4" />
-                    {t('car.bookNow')}
+                    Book now
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {t('car.bookNow')}
+                    Book now
                   </span>
                 )}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                Min {car.minTripDays} {t('common.perDay')} • Max {car.maxTripDays} {t('common.perDay')}
+                Min {car.minTripDays} days / Max {car.maxTripDays} days
               </p>
             </CardContent>
           </Card>

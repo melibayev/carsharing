@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,7 +18,6 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useLogin();
@@ -40,7 +38,7 @@ export default function LoginPage() {
       onSuccess: () => navigate(from, { replace: true }),
       onError: (err) => {
         const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-        setError(msg || t('auth.loginError'));
+        setError(msg || 'Invalid email or password');
       },
     });
   };
@@ -52,8 +50,8 @@ export default function LoginPage() {
           <div className="flex justify-center mb-2">
             <Car className="h-8 w-8 text-accent" />
           </div>
-          <CardTitle className="text-2xl font-heading">{t('auth.login')}</CardTitle>
-          <CardDescription>{t('app.tagline')}</CardDescription>
+          <CardTitle className="text-2xl font-heading">Log in</CardTitle>
+          <CardDescription>Rent a car across Uzbekistan</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -62,24 +60,24 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.email')}</Label>
+              <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="you@example.com" {...register('email')} className="rounded-lg" />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <Input id="password" type="password" placeholder="••••••••" {...register('password')} className="rounded-lg" />
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" placeholder="********" {...register('password')} className="rounded-lg" />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
             <Button type="submit" className="w-full rounded-xl" disabled={loginMutation.isPending}>
               {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.login')}
+              Log in
             </Button>
 
             <div className="text-center text-sm text-muted-foreground mt-4">
-              <span className="text-muted-foreground">{t('auth.forgotPassword')}</span>
+              <span className="text-muted-foreground">Forgot password?</span>
             </div>
 
             <div className="relative my-4">
@@ -136,9 +134,9 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {t('auth.noAccount')}{' '}
+            Don't have an account?{' '}
             <Link to="/register" className="text-primary hover:underline">
-              {t('auth.register')}
+              Sign up
             </Link>
           </p>
         </CardContent>

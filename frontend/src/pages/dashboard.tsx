@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Car, Calendar, Star, MessageSquare, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,14 +13,14 @@ import { formatUzs, formatDateRange } from '@/lib/utils';
 import { BookingStatus } from '@/types';
 
 const statusLabels: Record<string, string> = {
-  [BookingStatus.PendingApproval]: 'Kutilmoqda',
-  [BookingStatus.Confirmed]: 'Tasdiqlangan',
-  [BookingStatus.InProgress]: 'Faol',
-  [BookingStatus.Completed]: 'Tugallangan',
-  [BookingStatus.CancelledByGuest]: 'Bekor qilingan',
-  [BookingStatus.CancelledByHost]: 'Bekor qilingan',
-  [BookingStatus.Rejected]: 'Rad etilgan',
-  [BookingStatus.Disputed]: 'Munozarali',
+  [BookingStatus.PendingApproval]: 'Pending',
+  [BookingStatus.Confirmed]: 'Confirmed',
+  [BookingStatus.InProgress]: 'Active',
+  [BookingStatus.Completed]: 'Completed',
+  [BookingStatus.CancelledByGuest]: 'Cancelled',
+  [BookingStatus.CancelledByHost]: 'Cancelled',
+  [BookingStatus.Rejected]: 'Rejected',
+  [BookingStatus.Disputed]: 'Disputed',
 };
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -36,7 +35,6 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
 };
 
 export default function DashboardPage() {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [guestPage] = useState(1);
   const [hostPage] = useState(1);
@@ -47,8 +45,8 @@ export default function DashboardPage() {
   return (
     <div className="container py-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-heading font-bold">{t('nav.home')}</h1>
-        <p className="text-muted-foreground">{user?.firstName}!</p>
+        <h1 className="text-3xl font-heading font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome, {user?.firstName}!</p>
       </div>
 
       {/* Stats Cards */}
@@ -58,7 +56,7 @@ export default function DashboardPage() {
             <div className="p-2 rounded-full bg-primary/10"><Calendar className="h-5 w-5 text-primary" /></div>
             <div>
               <p className="text-2xl font-bold">{user?.guestTripCount ?? 0}</p>
-              <p className="text-xs text-muted-foreground">{t('car.trips')} (mehmon)</p>
+              <p className="text-xs text-muted-foreground">Trips (guest)</p>
             </div>
           </CardContent>
         </Card>
@@ -67,7 +65,7 @@ export default function DashboardPage() {
             <div className="p-2 rounded-full bg-green-500/10"><Car className="h-5 w-5 text-green-500" /></div>
             <div>
               <p className="text-2xl font-bold">{user?.hostTripCount ?? 0}</p>
-              <p className="text-xs text-muted-foreground">{t('car.trips')} (egasi)</p>
+              <p className="text-xs text-muted-foreground">Trips (host)</p>
             </div>
           </CardContent>
         </Card>
@@ -75,8 +73,8 @@ export default function DashboardPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-full bg-yellow-500/10"><Star className="h-5 w-5 text-yellow-500" /></div>
             <div>
-              <p className="text-2xl font-bold">{user?.averageRatingAsGuest ? user.averageRatingAsGuest.toFixed(1) : '—'}</p>
-              <p className="text-xs text-muted-foreground">Reyting</p>
+              <p className="text-2xl font-bold">{user?.averageRatingAsGuest ? user.averageRatingAsGuest.toFixed(1) : '-'}</p>
+              <p className="text-xs text-muted-foreground">Rating</p>
             </div>
           </CardContent>
         </Card>
@@ -85,7 +83,7 @@ export default function DashboardPage() {
             <div className="p-2 rounded-full bg-blue-500/10"><DollarSign className="h-5 w-5 text-blue-500" /></div>
             <div>
               <p className="text-2xl font-bold">{myCars?.length ?? 0}</p>
-              <p className="text-xs text-muted-foreground">{t('nav.myListings')}</p>
+              <p className="text-xs text-muted-foreground">My listings</p>
             </div>
           </CardContent>
         </Card>
@@ -94,13 +92,13 @@ export default function DashboardPage() {
       <Tabs defaultValue="guest">
         <TabsList>
           <TabsTrigger value="guest" className="gap-2">
-            <Calendar className="h-4 w-4" /> {t('nav.myBookings')}
+            <Calendar className="h-4 w-4" /> My bookings
           </TabsTrigger>
           <TabsTrigger value="host" className="gap-2">
-            <Car className="h-4 w-4" /> Egasi sifatida
+            <Car className="h-4 w-4" /> As host
           </TabsTrigger>
           <TabsTrigger value="cars" className="gap-2">
-            <DollarSign className="h-4 w-4" /> {t('nav.myListings')}
+            <DollarSign className="h-4 w-4" /> My listings
           </TabsTrigger>
         </TabsList>
 
@@ -135,8 +133,8 @@ export default function DashboardPage() {
             <Card>
               <CardContent className="p-8 text-center space-y-3">
                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
-                <p className="font-heading font-semibold">{t('search.noResults')}</p>
-                <Button asChild className="rounded-xl"><Link to="/search">{t('nav.search')}</Link></Button>
+                <p className="font-heading font-semibold">No bookings yet</p>
+                <Button asChild className="rounded-xl"><Link to="/search">Search cars</Link></Button>
               </CardContent>
             </Card>
           )}
@@ -160,7 +158,7 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold truncate">{b.carTitle}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatDateRange(b.startUtc, b.endUtc)} • {b.guest?.firstName ?? 'Guest'}
+                        {formatDateRange(b.startUtc, b.endUtc)} - {b.guest?.firstName ?? 'Guest'}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -175,8 +173,8 @@ export default function DashboardPage() {
             <Card>
               <CardContent className="p-8 text-center space-y-3">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground" />
-                <p className="font-heading font-semibold">{t('search.noResults')}</p>
-                <Button asChild className="rounded-xl"><Link to="/host/cars/new">{t('nav.listYourCar')}</Link></Button>
+                <p className="font-heading font-semibold">No host bookings yet</p>
+                <Button asChild className="rounded-xl"><Link to="/host/cars/new">List your car</Link></Button>
               </CardContent>
             </Card>
           )}
@@ -184,7 +182,7 @@ export default function DashboardPage() {
 
         <TabsContent value="cars" className="space-y-4">
           <div className="flex justify-end">
-            <Button asChild className="rounded-xl"><Link to="/host/cars/new">+ {t('nav.listYourCar')}</Link></Button>
+            <Button asChild className="rounded-xl"><Link to="/host/cars/new">+ List your car</Link></Button>
           </div>
           {carsLoading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)
@@ -203,11 +201,11 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold truncate">{car.year} {car.make} {car.model}</p>
                       <p className="text-sm text-muted-foreground">
-                        {car.city} • {car.tripCount} trips • ⭐ {car.averageRating > 0 ? car.averageRating.toFixed(1) : 'New'}
+                        {car.city} - {car.tripCount} trips - {car.averageRating > 0 ? car.averageRating.toFixed(1) : 'New'}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold font-mono">{formatUzs(car.dailyPriceUsd, false)} so'm/{t('common.perDay')}</p>
+                      <p className="font-bold font-mono">{formatUzs(car.dailyPriceUsd, false)} so'm/day</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -217,8 +215,8 @@ export default function DashboardPage() {
             <Card>
               <CardContent className="p-8 text-center space-y-3">
                 <Car className="h-12 w-12 mx-auto text-muted-foreground" />
-                <p className="font-heading font-semibold">{t('search.noResults')}</p>
-                <Button asChild className="rounded-xl"><Link to="/host/cars/new">{t('nav.listYourCar')}</Link></Button>
+                <p className="font-heading font-semibold">No listings yet</p>
+                <Button asChild className="rounded-xl"><Link to="/host/cars/new">List your car</Link></Button>
               </CardContent>
             </Card>
           )}

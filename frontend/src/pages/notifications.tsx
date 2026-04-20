@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
 export default function NotificationsPage() {
-  const { t } = useTranslation();
   const { data: notifications, isLoading } = useNotifications();
   const markReadMutation = useMarkNotificationRead();
   const markAllMutation = useMarkAllRead();
@@ -30,7 +28,7 @@ export default function NotificationsPage() {
     <div className="container py-8 max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold">Bildirishnomalar</h1>
+          <h1 className="text-2xl font-heading font-bold">Notifications</h1>
           {unreadCount > 0 && <p className="text-sm text-muted-foreground">{unreadCount} unread</p>}
         </div>
         {unreadCount > 0 && (
@@ -86,8 +84,8 @@ export default function NotificationsPage() {
         <Card>
           <CardContent className="p-12 text-center space-y-3">
             <Bell className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="font-heading font-semibold">{t('search.noResults')}</p>
-            <p className="text-sm text-muted-foreground">Hech qanday yangilik yo'q!</p>
+            <p className="font-heading font-semibold">No notifications</p>
+            <p className="text-sm text-muted-foreground">You're all caught up!</p>
           </CardContent>
         </Card>
       )}

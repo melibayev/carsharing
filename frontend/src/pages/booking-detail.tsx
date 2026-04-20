@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Car, Calendar, Star, MessageSquare, ChevronLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,18 +26,17 @@ import { BookingStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 const statusLabels: Record<string, string> = {
-  [BookingStatus.PendingApproval]: 'Kutilmoqda',
-  [BookingStatus.Confirmed]: 'Tasdiqlangan',
-  [BookingStatus.InProgress]: 'Faol',
-  [BookingStatus.Completed]: 'Tugallangan',
-  [BookingStatus.CancelledByGuest]: 'Bekor qilingan',
-  [BookingStatus.CancelledByHost]: 'Bekor qilingan',
-  [BookingStatus.Rejected]: 'Rad etilgan',
-  [BookingStatus.Disputed]: 'Munozarali',
+  [BookingStatus.PendingApproval]: 'Pending',
+  [BookingStatus.Confirmed]: 'Confirmed',
+  [BookingStatus.InProgress]: 'Active',
+  [BookingStatus.Completed]: 'Completed',
+  [BookingStatus.CancelledByGuest]: 'Cancelled',
+  [BookingStatus.CancelledByHost]: 'Cancelled',
+  [BookingStatus.Rejected]: 'Rejected',
+  [BookingStatus.Disputed]: 'Disputed',
 };
 
 export default function BookingDetailPage() {
-  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -74,8 +72,8 @@ export default function BookingDetailPage() {
   if (!booking) {
     return (
       <div className="container py-16 text-center">
-        <h2 className="text-2xl font-heading font-bold">{t('search.noResults')}</h2>
-        <Button className="mt-4 rounded-xl" onClick={() => navigate('/dashboard')}>{t('common.back')}</Button>
+        <h2 className="text-2xl font-heading font-bold">Booking not found</h2>
+        <Button className="mt-4 rounded-xl" onClick={() => navigate('/dashboard')}>Back</Button>
       </div>
     );
   }
@@ -125,7 +123,7 @@ export default function BookingDetailPage() {
   return (
     <div className="container py-8 max-w-3xl space-y-6">
       <Button variant="ghost" onClick={() => navigate('/dashboard')} className="gap-2">
-        <ChevronLeft className="h-4 w-4" /> {t('common.back')}
+        <ChevronLeft className="h-4 w-4" /> Back
       </Button>
 
       <div className="flex items-start justify-between">
@@ -151,7 +149,7 @@ export default function BookingDetailPage() {
               <p className="font-semibold text-lg">{booking.carTitle}</p>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                {booking.days} days • {formatDate(booking.startUtc)} → {formatDate(booking.endUtc)}
+                {booking.days} days - {formatDate(booking.startUtc)} to {formatDate(booking.endUtc)}
               </p>
             </div>
           </div>
@@ -187,20 +185,20 @@ export default function BookingDetailPage() {
           {/* Pricing */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>{formatUzs(booking.dailyRateUsd, false)} × {booking.days} {t('common.perDay')}</span>
+              <span>{formatUzs(booking.dailyRateUsd, false)} x {booking.days} days</span>
               <span className="font-mono">{formatUzs(booking.subtotalUsd)}</span>
             </div>
-            <div className="flex justify-between"><span>{t('car.cleaningFee')}</span><span className="font-mono">{formatUzs(booking.cleaningFeeUsd)}</span></div>
-            <div className="flex justify-between"><span>{t('car.serviceFee')}</span><span className="font-mono">{formatUzs(booking.serviceFeeUsd)}</span></div>
-            <div className="flex justify-between"><span>Soliq</span><span className="font-mono">{formatUzs(booking.taxesUsd)}</span></div>
+            <div className="flex justify-between"><span>Cleaning fee</span><span className="font-mono">{formatUzs(booking.cleaningFeeUsd)}</span></div>
+            <div className="flex justify-between"><span>Service fee</span><span className="font-mono">{formatUzs(booking.serviceFeeUsd)}</span></div>
+            <div className="flex justify-between"><span>Tax</span><span className="font-mono">{formatUzs(booking.taxesUsd)}</span></div>
             <Separator />
             <div className="flex justify-between font-semibold text-base">
-              <span>{t('car.totalPrice')}</span>
+              <span>Total</span>
               <span className="font-mono">{formatUzs(booking.totalChargedUsd)}</span>
             </div>
             {isHost && (
               <div className="flex justify-between text-green-600">
-                <span>To'lov</span>
+                <span>Your payout</span>
                 <span className="font-mono">{formatUzs(booking.hostPayoutUsd)}</span>
               </div>
             )}

@@ -1,5 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+﻿import { Link, useNavigate } from 'react-router-dom';
 import { Car, Bell, Menu, LogOut, User, LayoutDashboard, Settings, Shield, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,11 +15,9 @@ import { useLogout } from '@/hooks/use-auth';
 import { useUnreadCount } from '@/hooks/use-notifications';
 import { getInitials } from '@/lib/utils';
 import { useState } from 'react';
-import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher';
 import { useThemeStore } from '@/stores/theme-store';
 
 export function Navbar() {
-  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuthStore();
   const logoutMutation = useLogout();
   const navigate = useNavigate();
@@ -39,20 +36,18 @@ export function Navbar() {
           </Link>
           <nav className="hidden md:flex items-center gap-4">
             <Link to="/search" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              {t('nav.search')}
+              Search
             </Link>
             {isAuthenticated() && (
               <Link to="/host/cars/new" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                {t('nav.listYourCar')}
+                List your car
               </Link>
             )}
           </nav>
         </div>
 
         <div className="flex items-center gap-1">
-          <LanguageSwitcher />
-
-          <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
@@ -90,7 +85,7 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
-                    {t('nav.profile')}
+                    Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <Settings className="mr-2 h-4 w-4" />
@@ -108,7 +103,7 @@ export function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    {t('nav.logout')}
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -116,10 +111,10 @@ export function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Button variant="ghost" asChild>
-                <Link to="/login">{t('nav.login')}</Link>
+                <Link to="/login">Login</Link>
               </Button>
               <Button asChild>
-                <Link to="/register">{t('nav.register')}</Link>
+                <Link to="/register">Register</Link>
               </Button>
             </div>
           )}
@@ -136,20 +131,12 @@ export function Navbar() {
 
       {mobileOpen && (
         <div className="md:hidden border-t p-4 space-y-2">
-          <Link
-            to="/search"
-            className="block text-sm font-medium py-2"
-            onClick={() => setMobileOpen(false)}
-          >
-            {t('nav.search')}
+          <Link to="/search" className="block text-sm font-medium py-2" onClick={() => setMobileOpen(false)}>
+            Search
           </Link>
           {isAuthenticated() && (
-            <Link
-              to="/host/cars"
-              className="block text-sm font-medium py-2"
-              onClick={() => setMobileOpen(false)}
-            >
-              {t('nav.listYourCar')}
+            <Link to="/host/cars/new" className="block text-sm font-medium py-2" onClick={() => setMobileOpen(false)}>
+              List your car
             </Link>
           )}
         </div>

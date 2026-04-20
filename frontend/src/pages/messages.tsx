@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Send, Car, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,6 @@ import { useConversations, useMessages, useSendMessage } from '@/hooks/use-messa
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function MessagesPage() {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { data: conversations, isLoading: convsLoading } = useConversations();
   const { conversationId } = useParams<{ conversationId?: string }>();
@@ -40,7 +38,7 @@ export default function MessagesPage() {
 
   return (
     <div className="container py-6">
-      <h1 className="text-2xl font-heading font-bold mb-6">{t('nav.messages')}</h1>
+      <h1 className="text-2xl font-heading font-bold mb-6">Messages</h1>
       <div className="grid lg:grid-cols-[350px_1fr] gap-6 h-[calc(100vh-16rem)]">
         {/* Conversation List */}
         <Card className={cn('overflow-hidden', selectedId && 'hidden lg:block')}>
@@ -82,7 +80,7 @@ export default function MessagesPage() {
             ) : (
               <div className="p-8 text-center">
                 <Car className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">{t('search.noResults')}</p>
+                <p className="text-sm text-muted-foreground">No conversations yet</p>
               </div>
             )}
           </ScrollArea>
@@ -134,14 +132,14 @@ export default function MessagesPage() {
                     <div ref={bottomRef} />
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">{t('search.noResults')}</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">No messages yet</p>
                 )}
               </ScrollArea>
 
               {/* Input */}
               <form onSubmit={handleSend} className="flex gap-2 p-4 border-t">
                 <Input
-                  placeholder="Xabar yozing..."
+                  placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   className="flex-1"
@@ -155,7 +153,7 @@ export default function MessagesPage() {
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <Car className="h-12 w-12 mx-auto mb-2" />
-                <p>{t('nav.messages')}</p>
+                <p>Messages</p>
               </div>
             </div>
           )}

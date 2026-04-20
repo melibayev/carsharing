@@ -24,8 +24,7 @@ export const REGIONS: Region[] = [
   { code: 'SUR', latin: "Surxondaryo", cyrillic: "Сурхондарё", capital: "Termez", lat: 37.2242, lng: 67.2783 },
 ];
 
-export function getRegionDisplay(region: Region, locale: string): string {
-  if (locale === 'ru') return region.cyrillic;
+export function getRegionDisplay(region: Region): string {
   return region.latin;
 }
 

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +25,6 @@ const registerSchema = z.object({
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const registerMutation = useRegister();
   const [error, setError] = useState('');
@@ -66,8 +64,8 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-2">
             <Car className="h-8 w-8 text-accent" />
           </div>
-          <CardTitle className="text-2xl font-heading">{t('auth.register')}</CardTitle>
-          <CardDescription>{t('app.tagline')}</CardDescription>
+          <CardTitle className="text-2xl font-heading">Sign up</CardTitle>
+          <CardDescription>Rent a car across Uzbekistan</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -77,19 +75,19 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="firstName">{t('auth.firstName')}</Label>
+                <Label htmlFor="firstName">First name</Label>
                 <Input id="firstName" {...register('firstName')} className="rounded-lg" />
                 {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">{t('auth.lastName')}</Label>
+                <Label htmlFor="lastName">Last name</Label>
                 <Input id="lastName" {...register('lastName')} className="rounded-lg" />
                 {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">{t('auth.email')}</Label>
+              <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="you@example.com" {...register('email')} className="rounded-lg" />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
@@ -101,27 +99,27 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <Input id="password" type="password" placeholder="••••••••" {...register('password')} className="rounded-lg" />
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" placeholder="********" {...register('password')} className="rounded-lg" />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
-              <Input id="confirmPassword" type="password" placeholder="••••••••" {...register('confirmPassword')} className="rounded-lg" />
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Input id="confirmPassword" type="password" placeholder="********" {...register('confirmPassword')} className="rounded-lg" />
               {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
 
             <Button type="submit" className="w-full rounded-xl" disabled={registerMutation.isPending}>
               {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.register')}
+              Sign up
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            {t('auth.hasAccount')}{' '}
+            Already have an account?{' '}
             <Link to="/login" className="text-primary hover:underline">
-              {t('auth.login')}
+              Log in
             </Link>
           </p>
         </CardContent>

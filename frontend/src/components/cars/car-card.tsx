@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Star, Zap, Fuel, Cog, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,25 +7,25 @@ import { formatUzs } from '@/lib/utils';
 import type { CarListDto } from '@/types';
 import { BodyType, Transmission, FuelType } from '@/types';
 
-const bodyTypeKeys: Record<string, string> = {
-  [BodyType.Sedan]: 'categories.sedan',
-  [BodyType.SUV]: 'categories.suv',
-  [BodyType.Truck]: 'categories.truck',
-  [BodyType.Coupe]: 'categories.coupe',
-  [BodyType.Convertible]: 'categories.convertible',
-  [BodyType.Van]: 'categories.van',
-  [BodyType.Wagon]: 'categories.sedan',
-  [BodyType.Hatchback]: 'categories.hatchback',
-  [BodyType.Minivan]: 'categories.minivan',
-  [BodyType.SportsCar]: 'categories.coupe',
+const bodyTypeLabels: Record<string, string> = {
+  [BodyType.Sedan]: 'Sedan',
+  [BodyType.SUV]: 'SUV',
+  [BodyType.Truck]: 'Truck',
+  [BodyType.Coupe]: 'Coupe',
+  [BodyType.Convertible]: 'Convertible',
+  [BodyType.Van]: 'Van',
+  [BodyType.Wagon]: 'Wagon',
+  [BodyType.Hatchback]: 'Hatchback',
+  [BodyType.Minivan]: 'Minivan',
+  [BodyType.SportsCar]: 'Sports Car',
 };
 
-const fuelTypeIcons: Record<string, string> = {
-  [FuelType.Gasoline]: '⛽',
-  [FuelType.Diesel]: '⛽',
-  [FuelType.Electric]: '⚡',
-  [FuelType.Hybrid]: '🔋',
-  [FuelType.PlugInHybrid]: '🔌',
+const fuelTypeLabels: Record<string, string> = {
+  [FuelType.Gasoline]: 'Gasoline',
+  [FuelType.Diesel]: 'Diesel',
+  [FuelType.Electric]: 'Electric',
+  [FuelType.Hybrid]: 'Hybrid',
+  [FuelType.PlugInHybrid]: 'Plug-in',
 };
 
 interface CarCardProps {
@@ -34,7 +33,6 @@ interface CarCardProps {
 }
 
 export function CarCard({ car }: CarCardProps) {
-  const { t } = useTranslation();
   const photoUrl = car.coverPhotoUrl || car.photoUrls[0] || null;
 
   return (
@@ -66,7 +64,7 @@ export function CarCard({ car }: CarCardProps) {
               </div>
               <div className="text-right">
                 <p className="font-mono font-bold text-lg">{formatUzs(car.dailyPriceUsd, false)}</p>
-                <p className="text-xs text-muted-foreground">so'm/{t('common.perDay')}</p>
+                <p className="text-xs text-muted-foreground">so'm/day</p>
               </div>
             </div>
 
@@ -75,23 +73,23 @@ export function CarCard({ car }: CarCardProps) {
                 <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                 {car.averageRating > 0 ? car.averageRating.toFixed(1) : 'New'}
               </span>
-              <span>{car.tripCount} {t('car.trips').toLowerCase()}</span>
+              <span>{car.tripCount} trips</span>
             </div>
 
             <div className="flex flex-wrap gap-1.5">
               <Badge variant="outline" className="text-xs gap-1">
-                {t(bodyTypeKeys[car.bodyType] ?? 'categories.sedan')}
+                {bodyTypeLabels[car.bodyType] ?? 'Sedan'}
               </Badge>
               <Badge variant="outline" className="text-xs gap-1">
                 <Users className="h-3 w-3" />
                 {car.seats}
               </Badge>
               <Badge variant="outline" className="text-xs gap-1">
-                {car.transmission === Transmission.Automatic ? t('search.automatic') : t('search.manual')}
+                {car.transmission === Transmission.Automatic ? 'Automatic' : 'Manual'}
               </Badge>
               <Badge variant="outline" className="text-xs gap-1">
                 <Fuel className="h-3 w-3" />
-                {fuelTypeIcons[car.fuelType]}
+                {fuelTypeLabels[car.fuelType] ?? 'Gasoline'}
               </Badge>
             </div>
           </CardContent>

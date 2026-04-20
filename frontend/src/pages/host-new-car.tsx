@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -43,7 +42,6 @@ const carSchema = z.object({
 type CarForm = z.infer<typeof carSchema>;
 
 export default function HostNewCarPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const createMutation = useCreateCar();
   const { toast } = useToast();
@@ -89,13 +87,13 @@ export default function HostNewCarPage() {
 
   return (
     <div className="container py-8 max-w-2xl">
-      <h1 className="text-2xl font-heading font-bold mb-6">{t('nav.listYourCar')}</h1>
+      <h1 className="text-2xl font-heading font-bold mb-6">List your car</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Avtomobil ma'lumotlari</CardTitle>
-            <CardDescription>Mashiningiz haqida yozing</CardDescription>
+            <CardTitle>Car details</CardTitle>
+            <CardDescription>Tell us about your car</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
@@ -118,7 +116,7 @@ export default function HostNewCarPage() {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>{t('search.bodyType')}</Label>
+                <Label>Body type</Label>
                 <Select value={watch('bodyType')} onValueChange={(v) => setValue('bodyType', v as BodyType)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -133,7 +131,7 @@ export default function HostNewCarPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{t('search.transmission')}</Label>
+                <Label>Transmission</Label>
                 <Select value={watch('transmission')} onValueChange={(v) => setValue('transmission', v as Transmission)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -143,7 +141,7 @@ export default function HostNewCarPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{t('search.fuelType')}</Label>
+                <Label>Fuel type</Label>
                 <Select value={watch('fuelType')} onValueChange={(v) => setValue('fuelType', v as FuelType)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -158,7 +156,7 @@ export default function HostNewCarPage() {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>{t('car.seats')}</Label>
+                <Label>Seats</Label>
                 <Input type="number" {...register('seats', { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
@@ -167,7 +165,7 @@ export default function HostNewCarPage() {
               </div>
               <div className="space-y-2">
                 <Label>Color</Label>
-                <Input {...register('color')} placeholder="Oq" />
+                <Input {...register('color')} placeholder="White" />
               </div>
             </div>
           </CardContent>
@@ -175,31 +173,31 @@ export default function HostNewCarPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Narxlash</CardTitle>
+            <CardTitle>Pricing</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Kunlik narx (so'm)</Label>
+                <Label>Daily price (so'm)</Label>
                 <Input type="number" {...register('dailyPriceUsd', { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
-                <Label>{t('car.cleaningFee')}</Label>
+                <Label>Cleaning fee</Label>
                 <Input type="number" {...register('cleaningFeeUsd', { valueAsNumber: true })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Haftalik chegirma (%)</Label>
+                <Label>Weekly discount (%)</Label>
                 <Input type="number" {...register('weeklyDiscountPercent', { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
-                <Label>Oylik chegirma (%)</Label>
+                <Label>Monthly discount (%)</Label>
                 <Input type="number" {...register('monthlyDiscountPercent', { valueAsNumber: true })} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Depozit</Label>
+              <Label>Security deposit</Label>
               <Input type="number" {...register('securityDepositUsd', { valueAsNumber: true })} />
             </div>
           </CardContent>
@@ -207,13 +205,13 @@ export default function HostNewCarPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Joylashuv va Qoidalar</CardTitle>
+            <CardTitle>Location and Rules</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>City</Label>
-                <Input {...register('city')} placeholder="Toshkent" />
+                <Input {...register('city')} placeholder="Tashkent" />
                 {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
               </div>
               <div className="space-y-2">
@@ -237,16 +235,16 @@ export default function HostNewCarPage() {
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea {...register('description')} placeholder="Mashiningizni tasvirlab bering..." rows={4} />
+              <Textarea {...register('description')} placeholder="Describe your car..." rows={4} />
             </div>
             <div className="space-y-2">
-              <Label>{t('car.rules')}</Label>
-              <Textarea {...register('rules')} placeholder="Ijarachilar uchun qoidalar..." rows={3} />
+              <Label>Rules</Label>
+              <Textarea {...register('rules')} placeholder="Rules for renters..." rows={3} />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label>Instant Book</Label>
-                <p className="text-sm text-muted-foreground">Mehmonlar tasdiqlashsiz bron qilsin</p>
+                <p className="text-sm text-muted-foreground">Allow guests to book without approval</p>
               </div>
               <Switch
                 checked={watch('isInstantBook')}
@@ -258,7 +256,7 @@ export default function HostNewCarPage() {
 
         <Button type="submit" size="lg" className="w-full rounded-xl" disabled={createMutation.isPending}>
           {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {t('nav.listYourCar')}
+          List your car
         </Button>
       </form>
     </div>

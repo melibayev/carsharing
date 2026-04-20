@@ -1,6 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Search, SlidersHorizontal, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,6 @@ import { BodyType, Transmission, FuelType } from '@/types';
 import type { CarSearchParams } from '@/types';
 
 export default function SearchPage() {
-  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [regionCode, setRegionCode] = useState(searchParams.get('region') || '');
   const [showFilters, setShowFilters] = useState(false);
@@ -28,12 +26,10 @@ export default function SearchPage() {
   const [instantBook, setInstantBook] = useState(false);
   const [page, setPage] = useState(1);
 
-  // Map region code → capital city name for API
   const cityFromRegion = regionCode && regionCode !== 'all'
     ? getRegionByCode(regionCode)?.capital
     : undefined;
 
-  // Also support legacy ?city= param
   const legacyCity = searchParams.get('city') || '';
 
   const params: CarSearchParams = {
@@ -100,8 +96,8 @@ export default function SearchPage() {
           className="gap-2 rounded-xl"
         >
           <SlidersHorizontal className="h-4 w-4" />
-          {t('search.filters')}
-          {hasFilters && <Badge variant="secondary" className="ml-1">{t('search.filters')}</Badge>}
+          Filters
+          {hasFilters && <Badge variant="secondary" className="ml-1">Active</Badge>}
         </Button>
       </div>
 
@@ -109,16 +105,16 @@ export default function SearchPage() {
       {showFilters && (
         <div className="border rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-heading font-semibold">{t('search.filters')}</h3>
+            <h3 className="font-heading font-semibold">Filters</h3>
             {hasFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-1" /> {t('search.clearFilters')}
+                <X className="h-4 w-4 mr-1" /> Clear all
               </Button>
             )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">{t('search.priceMin')}</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Min price</label>
               <Input
                 type="number"
                 placeholder="100 000"
@@ -128,7 +124,7 @@ export default function SearchPage() {
               />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">{t('search.priceMax')}</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Max price</label>
               <Input
                 type="number"
                 placeholder="2 000 000"
@@ -138,52 +134,52 @@ export default function SearchPage() {
               />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">{t('search.bodyType')}</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Body type</label>
               <Select value={bodyType} onValueChange={(v) => { setBodyType(v); setPage(1); }}>
-                <SelectTrigger className="rounded-lg"><SelectValue placeholder={t('search.allRegions')} /></SelectTrigger>
+                <SelectTrigger className="rounded-lg"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Sedan">{t('categories.sedan')}</SelectItem>
-                  <SelectItem value="SUV">{t('categories.suv')}</SelectItem>
-                  <SelectItem value="Truck">{t('categories.truck')}</SelectItem>
-                  <SelectItem value="Coupe">{t('categories.coupe')}</SelectItem>
-                  <SelectItem value="Convertible">{t('categories.convertible')}</SelectItem>
-                  <SelectItem value="Van">{t('categories.van')}</SelectItem>
-                  <SelectItem value="Hatchback">{t('categories.hatchback')}</SelectItem>
-                  <SelectItem value="Minivan">{t('categories.minivan')}</SelectItem>
+                  <SelectItem value="Sedan">Sedan</SelectItem>
+                  <SelectItem value="SUV">SUV</SelectItem>
+                  <SelectItem value="Truck">Truck</SelectItem>
+                  <SelectItem value="Coupe">Coupe</SelectItem>
+                  <SelectItem value="Convertible">Convertible</SelectItem>
+                  <SelectItem value="Van">Van</SelectItem>
+                  <SelectItem value="Hatchback">Hatchback</SelectItem>
+                  <SelectItem value="Minivan">Minivan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">{t('search.transmission')}</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Transmission</label>
               <Select value={transmission} onValueChange={(v) => { setTransmission(v); setPage(1); }}>
-                <SelectTrigger className="rounded-lg"><SelectValue placeholder={t('search.allRegions')} /></SelectTrigger>
+                <SelectTrigger className="rounded-lg"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Automatic">{t('search.automatic')}</SelectItem>
-                  <SelectItem value="Manual">{t('search.manual')}</SelectItem>
+                  <SelectItem value="Automatic">Automatic</SelectItem>
+                  <SelectItem value="Manual">Manual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">{t('search.fuelType')}</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Fuel type</label>
               <Select value={fuelType} onValueChange={(v) => { setFuelType(v); setPage(1); }}>
-                <SelectTrigger className="rounded-lg"><SelectValue placeholder={t('search.allRegions')} /></SelectTrigger>
+                <SelectTrigger className="rounded-lg"><SelectValue placeholder="All" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Gasoline">{t('search.petrol')}</SelectItem>
-                  <SelectItem value="Diesel">{t('search.diesel')}</SelectItem>
-                  <SelectItem value="Electric">{t('search.electric')}</SelectItem>
-                  <SelectItem value="Hybrid">{t('search.hybrid')}</SelectItem>
+                  <SelectItem value="Gasoline">Gasoline</SelectItem>
+                  <SelectItem value="Diesel">Diesel</SelectItem>
+                  <SelectItem value="Electric">Electric</SelectItem>
+                  <SelectItem value="Hybrid">Hybrid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-1 block">{t('search.sortBy')}</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Sort by</label>
               <Select value={sort} onValueChange={(v) => { setSort(v); setPage(1); }}>
                 <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="recommended">{t('search.sortRating')}</SelectItem>
-                  <SelectItem value="price_asc">{t('search.sortCheap')}</SelectItem>
-                  <SelectItem value="price_desc">{t('search.sortExpensive')}</SelectItem>
-                  <SelectItem value="newest">{t('search.sortNewest')}</SelectItem>
+                  <SelectItem value="recommended">Top rated</SelectItem>
+                  <SelectItem value="price_asc">Cheapest first</SelectItem>
+                  <SelectItem value="price_desc">Most expensive</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -206,7 +202,7 @@ export default function SearchPage() {
       {/* Results Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {data ? t('search.results', { count: data.totalCount }) : t('common.loading')}
+          {data ? `${data.totalCount} cars found` : 'Loading...'}
           {cityFromRegion && <> — <span className="font-medium text-foreground">{cityFromRegion}</span></>}
         </p>
       </div>
@@ -231,9 +227,9 @@ export default function SearchPage() {
       ) : (
         <div className="text-center py-16 space-y-3">
           <Search className="h-12 w-12 text-muted-foreground mx-auto" />
-          <h3 className="text-lg font-heading font-semibold">{t('search.noResults')}</h3>
-          <p className="text-muted-foreground">{t('search.noResultsDesc')}</p>
-          <Button variant="outline" onClick={clearFilters} className="rounded-xl">{t('search.clearFilters')}</Button>
+          <h3 className="text-lg font-heading font-semibold">No cars found</h3>
+          <p className="text-muted-foreground">Try adjusting your filters or search in a different region</p>
+          <Button variant="outline" onClick={clearFilters} className="rounded-xl">Clear filters</Button>
         </div>
       )}
 
@@ -247,7 +243,7 @@ export default function SearchPage() {
             onClick={() => setPage(page - 1)}
             className="rounded-lg"
           >
-            {t('common.previous')}
+            Previous
           </Button>
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
@@ -272,7 +268,7 @@ export default function SearchPage() {
             onClick={() => setPage(page + 1)}
             className="rounded-lg"
           >
-            {t('common.next')}
+            Next
           </Button>
         </div>
       )}

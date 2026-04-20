@@ -15,9 +15,6 @@ import '@fontsource/inter/600.css';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
 
-// i18n – must be imported before App so translations are ready
-import './i18n';
-
 import './index.css';
 
 const queryClient = new QueryClient({

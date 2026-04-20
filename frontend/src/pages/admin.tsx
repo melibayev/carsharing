@@ -11,14 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import { BookingStatus } from '@/types';
 
 const statusLabels: Record<string, string> = {
-  [BookingStatus.PendingApproval]: 'Kutilmoqda',
-  [BookingStatus.Confirmed]: 'Tasdiqlangan',
-  [BookingStatus.InProgress]: 'Faol',
-  [BookingStatus.Completed]: 'Tugallangan',
-  [BookingStatus.CancelledByGuest]: 'Bekor qilingan',
-  [BookingStatus.CancelledByHost]: 'Bekor qilingan',
-  [BookingStatus.Rejected]: 'Rad etilgan',
-  [BookingStatus.Disputed]: 'Munozarali',
+  [BookingStatus.PendingApproval]: 'Pending',
+  [BookingStatus.Confirmed]: 'Confirmed',
+  [BookingStatus.InProgress]: 'Active',
+  [BookingStatus.Completed]: 'Completed',
+  [BookingStatus.CancelledByGuest]: 'Cancelled',
+  [BookingStatus.CancelledByHost]: 'Cancelled',
+  [BookingStatus.Rejected]: 'Rejected',
+  [BookingStatus.Disputed]: 'Disputed',
 };
 
 export default function AdminPage() {
@@ -209,7 +209,7 @@ export default function AdminPage() {
                         <tr key={b.id} className="border-b last:border-0">
                           <td className="p-3 font-medium">{b.carTitle}</td>
                           <td className="p-3 text-muted-foreground">{b.guest?.firstName ?? 'Guest'}</td>
-                          <td className="p-3 text-muted-foreground">{formatDate(b.startUtc)} – {formatDate(b.endUtc)}</td>
+                          <td className="p-3 text-muted-foreground">{formatDate(b.startUtc)} - {formatDate(b.endUtc)}</td>
                           <td className="p-3 font-mono">{formatUzs(b.totalChargedUsd)}</td>
                           <td className="p-3"><Badge variant="outline">{statusLabels[b.status]}</Badge></td>
                         </tr>
