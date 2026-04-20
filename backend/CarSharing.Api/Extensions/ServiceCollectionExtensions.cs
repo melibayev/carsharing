@@ -15,6 +15,9 @@ using CarSharing.Api.Services.Notifications;
 using CarSharing.Api.Services.Payments;
 using CarSharing.Api.Services.Reviews;
 using CarSharing.Api.Services.Uploads;
+using CarSharing.Api.Services.Audit;
+using CarSharing.Api.Services.Disputes;
+using CarSharing.Api.Services.Verification;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Hangfire;
@@ -185,6 +188,15 @@ public static class ServiceCollectionExtensions
 
         // Payments — Replace with StripePaymentService when going live.
         services.AddScoped<IPaymentService, FakePaymentService>();
+
+        // Verification / KYC
+        services.AddScoped<IKycService, KycService>();
+
+        // Audit
+        services.AddScoped<IAuditService, AuditService>();
+
+        // Disputes
+        services.AddScoped<IDisputeService, DisputeService>();
 
         // Geocoding
         services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();

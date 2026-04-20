@@ -290,3 +290,94 @@ public record EarningsDto(
 
 public record MonthlyEarningDto(int Year, int Month, decimal Amount, int Trips);
 public record CarEarningDto(Guid CarId, string CarTitle, decimal TotalEarnings, int TripCount);
+
+// === KYC DTOs ===
+public record SubmitKycRequest(
+    KycDocumentType DocumentType,
+    string DocumentFrontUrl,
+    string? DocumentBackUrl,
+    string? SelfieUrl,
+    string? DocumentNumber,
+    DateTimeOffset? DocumentExpiry);
+
+public class KycVerificationDto
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string UserName { get; set; } = "";
+    public string UserEmail { get; set; } = "";
+    public KycStatus Status { get; set; }
+    public KycDocumentType DocumentType { get; set; }
+    public string DocumentFrontUrl { get; set; } = "";
+    public string? DocumentBackUrl { get; set; }
+    public string? SelfieUrl { get; set; }
+    public string? DocumentNumber { get; set; }
+    public DateTimeOffset? DocumentExpiry { get; set; }
+    public string? RejectionReason { get; set; }
+    public DateTimeOffset? ReviewedAt { get; set; }
+    public string? Notes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public record ReviewKycRequest(bool Approved, string? RejectionReason, string? Notes);
+
+// === Dispute DTOs ===
+public record CreateDisputeRequest(
+    Guid BookingId,
+    DisputeCategory Category,
+    string Description,
+    List<string>? EvidenceUrls);
+
+public class DisputeDto
+{
+    public Guid Id { get; set; }
+    public Guid BookingId { get; set; }
+    public string BookingTitle { get; set; } = "";
+    public Guid FiledById { get; set; }
+    public string FiledByName { get; set; } = "";
+    public DisputeStatus Status { get; set; }
+    public DisputeCategory Category { get; set; }
+    public string Description { get; set; } = "";
+    public List<string> EvidenceUrls { get; set; } = new();
+    public string? Resolution { get; set; }
+    public decimal? RefundAmount { get; set; }
+    public DateTimeOffset? ResolvedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public record ResolveDisputeRequest(string Resolution, decimal? RefundAmount);
+
+// === Audit DTOs ===
+public class AuditLogDto
+{
+    public Guid Id { get; set; }
+    public string Action { get; set; } = "";
+    public string EntityType { get; set; } = "";
+    public Guid? EntityId { get; set; }
+    public string? ActorEmail { get; set; }
+    public string? OldValues { get; set; }
+    public string? NewValues { get; set; }
+    public string? IpAddress { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+// === Admin Extended ===
+public record AdminCarDto(
+    Guid Id, string Make, string Model, int Year, string City,
+    decimal DailyPriceUsd, CarStatus Status, string OwnerName,
+    string OwnerEmail, decimal AverageRating, int TripCount,
+    DateTimeOffset CreatedAt);
+
+public record AdminBookingDto(
+    Guid Id, string CarTitle, string GuestName, string HostName,
+    BookingStatus Status, decimal TotalChargedUsd,
+    DateTimeOffset StartUtc, DateTimeOffset EndUtc,
+    DateTimeOffset CreatedAt);
+
+public record AdminFinanceDto(
+    decimal TotalRevenue, decimal MonthlyRevenue,
+    decimal PendingPayouts, decimal TotalPayouts,
+    int CompletedBookings, decimal AverageBookingValue,
+    List<MonthlyRevenueDto> MonthlyBreakdown);
+
+public record MonthlyRevenueDto(int Year, int Month, decimal Revenue, decimal Payouts, int Bookings);
