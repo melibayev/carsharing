@@ -562,3 +562,60 @@ export interface MonthlyRevenueDto {
   payouts: number;
   bookings: number;
 }
+
+// === Onboarding ===
+export enum ProfileCompletionStatus {
+  Step1Done = 'Step1Done',
+  Step2Done = 'Step2Done',
+  Step3Done = 'Step3Done',
+  Step4Done = 'Step4Done',
+  Complete = 'Complete',
+  Rejected = 'Rejected',
+}
+
+export interface OnboardingStatusDto {
+  status: ProfileCompletionStatus | null;
+  currentStep: number;
+  isComplete: boolean;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface OnboardingStep2Request {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  dateOfBirth: string;
+  phoneNumber: string;
+  addressLine1: string;
+  addressCity: string;
+  addressRegion: string;
+  addressPostalCode: string;
+}
+
+export interface OnboardingStep3Request {
+  driverLicenseNumber: string;
+  driverLicenseExpiry: string;
+  driverLicensePhotoUrl: string;
+}
+
+export interface OnboardingStep4Request {
+  nationalIdNumber: string;
+  nationalIdFrontUrl: string;
+  nationalIdBackUrl?: string;
+  selfieUrl: string;
+}
+
+export interface OnboardingStep5Request {
+  paymentMethodLast4: string;
+  paymentMethodBrand: string;
+}
+
+export interface DocumentUploadResponse {
+  url: string;
+}
+
+export interface EmailAvailableResponse {
+  available: boolean;
+}
