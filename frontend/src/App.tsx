@@ -16,6 +16,7 @@ const Notifications = lazy(() => import('@/pages/notifications'));
 const Profile = lazy(() => import('@/pages/profile'));
 const HostNewCar = lazy(() => import('@/pages/host-new-car'));
 const KycWizard = lazy(() => import('@/pages/kyc'));
+const Onboarding = lazy(() => import('@/pages/onboarding'));
 
 const AdminShell = lazy(() => import('@/components/admin/AdminShell'));
 const AdminDashboard = lazy(() => import('@/pages/admin/index'));
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="register" element={<Register />} />
           <Route path="search" element={<Search />} />
           <Route path="cars/:id" element={<CarDetail />} />
+          <Route path="onboarding" element={<Onboarding />} />
 
           {/* Auth required */}
           <Route element={<AuthGuard />}>
