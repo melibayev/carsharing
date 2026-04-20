@@ -435,3 +435,130 @@ export interface CarEarningDto {
   totalEarnings: number;
   tripCount: number;
 }
+
+// === KYC ===
+export enum KycStatus {
+  Pending = 'Pending',
+  InReview = 'InReview',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  Expired = 'Expired',
+}
+
+export enum KycDocumentType {
+  Passport = 'Passport',
+  DriverLicense = 'DriverLicense',
+  NationalId = 'NationalId',
+}
+
+export interface KycVerificationDto {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  status: KycStatus;
+  documentType: KycDocumentType;
+  documentFrontUrl: string;
+  documentBackUrl: string | null;
+  selfieUrl: string | null;
+  documentNumber: string | null;
+  documentExpiry: string | null;
+  rejectionReason: string | null;
+  reviewedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+// === Dispute ===
+export enum DisputeStatus {
+  Open = 'Open',
+  InReview = 'InReview',
+  Resolved = 'Resolved',
+  Escalated = 'Escalated',
+  Closed = 'Closed',
+}
+
+export enum DisputeCategory {
+  VehicleDamage = 'VehicleDamage',
+  CleanlinessIssue = 'CleanlinessIssue',
+  LateFee = 'LateFee',
+  WrongVehicle = 'WrongVehicle',
+  CancellationDispute = 'CancellationDispute',
+  SafetyIssue = 'SafetyIssue',
+  Other = 'Other',
+}
+
+export interface DisputeDto {
+  id: string;
+  bookingId: string;
+  bookingTitle: string;
+  filedById: string;
+  filedByName: string;
+  status: DisputeStatus;
+  category: DisputeCategory;
+  description: string;
+  evidenceUrls: string[];
+  resolution: string | null;
+  refundAmount: number | null;
+  resolvedAt: string | null;
+  createdAt: string;
+}
+
+// === Audit ===
+export interface AuditLogDto {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  actorEmail: string | null;
+  oldValues: string | null;
+  newValues: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
+// === Admin Extended ===
+export interface AdminCarDto {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  city: string;
+  dailyPriceUsd: number;
+  status: CarStatus;
+  ownerName: string;
+  ownerEmail: string;
+  averageRating: number;
+  tripCount: number;
+  createdAt: string;
+}
+
+export interface AdminBookingDto {
+  id: string;
+  carTitle: string;
+  guestName: string;
+  hostName: string;
+  status: BookingStatus;
+  totalChargedUsd: number;
+  startUtc: string;
+  endUtc: string;
+  createdAt: string;
+}
+
+export interface AdminFinanceDto {
+  totalRevenue: number;
+  monthlyRevenue: number;
+  pendingPayouts: number;
+  totalPayouts: number;
+  completedBookings: number;
+  averageBookingValue: number;
+  monthlyBreakdown: MonthlyRevenueDto[];
+}
+
+export interface MonthlyRevenueDto {
+  year: number;
+  month: number;
+  revenue: number;
+  payouts: number;
+  bookings: number;
+}

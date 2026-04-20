@@ -208,7 +208,7 @@ export default function AdminPage() {
                       {bookings.items.map((b) => (
                         <tr key={b.id} className="border-b last:border-0">
                           <td className="p-3 font-medium">{b.carTitle}</td>
-                          <td className="p-3 text-muted-foreground">{b.guest?.firstName ?? 'Guest'}</td>
+                          <td className="p-3 text-muted-foreground">{(b as any).guestName ?? 'Guest'}</td>
                           <td className="p-3 text-muted-foreground">{formatDate(b.startUtc)} - {formatDate(b.endUtc)}</td>
                           <td className="p-3 font-mono">{formatUzs(b.totalChargedUsd)}</td>
                           <td className="p-3"><Badge variant="outline">{statusLabels[b.status]}</Badge></td>

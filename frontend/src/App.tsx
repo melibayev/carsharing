@@ -14,8 +14,17 @@ const BookingDetail = lazy(() => import('@/pages/booking-detail'));
 const Messages = lazy(() => import('@/pages/messages'));
 const Notifications = lazy(() => import('@/pages/notifications'));
 const Profile = lazy(() => import('@/pages/profile'));
-const Admin = lazy(() => import('@/pages/admin'));
 const HostNewCar = lazy(() => import('@/pages/host-new-car'));
+
+const AdminShell = lazy(() => import('@/components/admin/AdminShell'));
+const AdminDashboard = lazy(() => import('@/pages/admin/index'));
+const AdminUsers = lazy(() => import('@/pages/admin/users'));
+const AdminCars = lazy(() => import('@/pages/admin/cars'));
+const AdminBookings = lazy(() => import('@/pages/admin/bookings'));
+const AdminVerifications = lazy(() => import('@/pages/admin/verifications'));
+const AdminDisputes = lazy(() => import('@/pages/admin/disputes'));
+const AdminFinance = lazy(() => import('@/pages/admin/finance'));
+const AdminAudit = lazy(() => import('@/pages/admin/audit'));
 
 function Spinner() {
   return (
@@ -50,7 +59,16 @@ export default function App() {
 
           {/* Admin */}
           <Route element={<AuthGuard requireAdmin />}>
-            <Route path="admin" element={<Admin />} />
+            <Route path="admin" element={<AdminShell />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="cars" element={<AdminCars />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="verifications" element={<AdminVerifications />} />
+              <Route path="disputes" element={<AdminDisputes />} />
+              <Route path="finance" element={<AdminFinance />} />
+              <Route path="audit" element={<AdminAudit />} />
+            </Route>
           </Route>
         </Route>
       </Routes>
