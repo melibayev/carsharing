@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Star, Zap, Fuel, Cog, Users } from 'lucide-react';
+import { Star, Zap, Fuel, Cog, Users, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatUzs } from '@/lib/utils';
 import type { CarListDto } from '@/types';
 import { BodyType, Transmission, FuelType } from '@/types';
+import { useIsFavorite, useToggleFavorite } from '@/hooks/use-favorites';
+import { useAuthStore } from '@/stores/auth-store';
 
 const bodyTypeLabels: Record<string, string> = {
   [BodyType.Sedan]: 'Sedan',
@@ -34,6 +36,16 @@ interface CarCardProps {
 
 export function CarCard({ car }: CarCardProps) {
   const photoUrl = car.coverPhotoUrl || car.photoUrls[0] || null;
+  const { isAuthenticated } = useAuthStore();
+  const { data: isFavorite } = useIsFavorite(car.id);
+  const toggleFavorite = useToggleFavorite();
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated()) return;
+    toggleFavorite.mutate({ carId: car.id, isFavorite: !!isFavorite });
+  };
 
   return (
     <Link to={`/cars/${car.id}`}>
@@ -52,6 +64,17 @@ export function CarCard({ car }: CarCardProps) {
                 <Zap className="h-3 w-3" />
                 Instant
               </Badge>
+            )}
+            {isAuthenticated() && (
+              <button
+                onClick={handleFavorite}
+                className="absolute top-2 left-2 h-8 w-8 rounded-full bg-white/80 dark:bg-black/50 flex items-center justify-center hover:scale-110 transition-transform"
+                aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Heart
+                  className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600 dark:text-gray-300'}`}
+                />
+              </button>
             )}
           </div>
           <CardContent className="p-4 space-y-2">
