@@ -122,7 +122,7 @@ export default function OnboardingStep3() {
         let latestFormatted: string | undefined;
         let dm: RegExpExecArray | null;
         while ((dm = dateRegex.exec(text)) !== null) {
-          const [, dd, mo, yyyy] = dm;
+          const [, dd = '', mo = '', yyyy = ''] = dm;
           const dt = new Date(Number(yyyy), Number(mo) - 1, Number(dd));
           if (!isNaN(dt.getTime()) && dt.getTime() > now) {
             if (!latestDate || dt > latestDate) {

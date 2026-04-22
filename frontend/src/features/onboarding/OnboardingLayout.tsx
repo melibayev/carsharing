@@ -41,9 +41,6 @@ export default function OnboardingLayout({
   const currentStepDef = steps[currentStep - 1];
   const buttonText = continueLabel ?? (currentStep === 1 ? 'Create account' : currentStep === 6 ? 'Finish' : 'Continue');
 
-  const handleStepClick = (_stepId: number) => {
-    // Step navigation disabled — users must complete steps in order
-  };
 
   const handleSaveAndExit = () => {
     navigate('/');
