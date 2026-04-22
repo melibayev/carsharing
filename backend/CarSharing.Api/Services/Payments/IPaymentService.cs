@@ -7,4 +7,5 @@ public interface IPaymentService
     Task CaptureAsync(string paymentIntentId, decimal amount);
     Task RefundAsync(string paymentIntentId, decimal amount);
     Task<string> CreatePayoutAsync(Guid hostId, decimal amount);
+    Task<string> AttachPayoutMethodAsync(Guid userId, string type, string tokenizedDetails);
 }

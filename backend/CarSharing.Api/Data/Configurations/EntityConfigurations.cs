@@ -1,4 +1,4 @@
-using CarSharing.Api.Models.Entities;
+﻿using CarSharing.Api.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,6 +18,12 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
         builder.Property(u => u.StripeConnectAccountId).HasMaxLength(200);
         builder.Property(u => u.AverageRatingAsHost).HasColumnType("decimal(3,2)");
         builder.Property(u => u.AverageRatingAsGuest).HasColumnType("decimal(3,2)");
+        builder.Property(u => u.HostAgreementVersion).HasMaxLength(50);
+
+        builder.HasOne(u => u.HostPayoutMethod)
+            .WithMany()
+            .HasForeignKey(u => u.HostPayoutMethodId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -149,10 +155,13 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
 {
     public void Configure(EntityTypeBuilder<Message> builder)
     {
-        builder.Property(m => m.Body).HasMaxLength(2000).IsRequired();
+        builder.Property(m => m.Body).HasMaxLength(2000);
+        builder.Property(m => m.AttachmentUrl).HasMaxLength(500);
         builder.HasOne(m => m.Conversation).WithMany(c => c.Messages).HasForeignKey(m => m.ConversationId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(m => m.Sender).WithMany(u => u.SentMessages).HasForeignKey(m => m.SenderId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(m => m.Booking).WithMany().HasForeignKey(m => m.BookingId).OnDelete(DeleteBehavior.SetNull);
         builder.HasIndex(m => new { m.ConversationId, m.SentAt });
+        builder.HasIndex(m => m.BookingId);
     }
 }
 
@@ -248,5 +257,81 @@ public class DisputeConfiguration : IEntityTypeConfiguration<Dispute>
 
         builder.HasIndex(d => d.Status);
         builder.HasIndex(d => d.BookingId);
+    }
+}
+
+public class PayoutMethodConfiguration : IEntityTypeConfiguration<PayoutMethod>
+{
+    public void Configure(EntityTypeBuilder<PayoutMethod> builder)
+    {
+        builder.Property(p => p.Brand).HasMaxLength(50).IsRequired();
+        builder.Property(p => p.Last4).HasMaxLength(4).IsRequired();
+        builder.Property(p => p.HolderName).HasMaxLength(200).IsRequired();
+        builder.Property(p => p.BankName).HasMaxLength(200);
+        builder.Property(p => p.ProviderReference).HasMaxLength(500);
+
+        builder.HasOne(p => p.User).WithMany(u => u.PayoutMethods).HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(p => p.UserId);
+    }
+}
+
+public class CarDraftConfiguration : IEntityTypeConfiguration<CarDraft>
+{
+    public void Configure(EntityTypeBuilder<CarDraft> builder)
+    {
+        builder.Property(d => d.PlateNumber).HasMaxLength(20);
+        builder.Property(d => d.Vin).HasMaxLength(17);
+        builder.Property(d => d.Make).HasMaxLength(100);
+        builder.Property(d => d.Model).HasMaxLength(100);
+        builder.Property(d => d.Trim).HasMaxLength(100);
+        builder.Property(d => d.Color).HasMaxLength(50);
+        builder.Property(d => d.AddressLine).HasMaxLength(300);
+        builder.Property(d => d.City).HasMaxLength(200);
+        builder.Property(d => d.Region).HasMaxLength(100);
+        builder.Property(d => d.PostalCode).HasMaxLength(20);
+        builder.Property(d => d.SelfCheckInMethod).HasMaxLength(200);
+        builder.Property(d => d.DailyPriceUzs).HasColumnType("decimal(18,2)");
+        builder.Property(d => d.CleaningFeeUzs).HasColumnType("decimal(18,2)");
+        builder.Property(d => d.SecurityDepositUzs).HasColumnType("decimal(18,2)");
+        builder.Property(d => d.ExtraKmFeeUzs).HasColumnType("decimal(18,2)");
+        builder.Property(d => d.Description).HasMaxLength(2000);
+        builder.Property(d => d.Rules).HasMaxLength(1000);
+        builder.Property(d => d.CustomRules).HasMaxLength(500);
+
+        builder.HasOne(d => d.User).WithMany(u => u.CarDrafts).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(d => d.UserId);
+    }
+}
+
+public class CarDraftDocumentConfiguration : IEntityTypeConfiguration<CarDraftDocument>
+{
+    public void Configure(EntityTypeBuilder<CarDraftDocument> builder)
+    {
+        builder.Property(d => d.Category).HasMaxLength(50).IsRequired();
+        builder.Property(d => d.Url).HasMaxLength(500).IsRequired();
+        builder.Property(d => d.PublicId).HasMaxLength(200);
+        builder.Property(d => d.OriginalFileName).HasMaxLength(300);
+
+        builder.HasOne(d => d.CarDraft).WithMany().HasForeignKey(d => d.CarDraftId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(d => d.CarDraftId);
+    }
+}
+
+public class EmailVerificationCodeConfiguration : IEntityTypeConfiguration<EmailVerificationCode>
+{
+    public void Configure(EntityTypeBuilder<EmailVerificationCode> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.CodeHash).HasMaxLength(64).IsRequired();
+        builder.Property(e => e.IpAddress).HasMaxLength(45);
+        builder.Property(e => e.UserAgent).HasMaxLength(500);
+
+        builder.HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Fast lookup for live (unconsumed) code per user
+        builder.HasIndex(e => new { e.UserId, e.ConsumedAt });
     }
 }

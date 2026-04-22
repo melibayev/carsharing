@@ -54,11 +54,16 @@ public class KycService : IKycService
         return await MapToDto(kyc.Id);
     }
 
-    public async Task<PagedResult<KycVerificationDto>> GetPendingAsync(int page, int pageSize)
+    public async Task<PagedResult<KycVerificationDto>> GetPendingAsync(int page, int pageSize, string? status = null)
     {
-        var query = _db.KycVerifications
-            .Where(k => k.Status == KycStatus.Pending || k.Status == KycStatus.InReview)
-            .OrderBy(k => k.CreatedAt);
+        var query = _db.KycVerifications.AsQueryable();
+
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<KycStatus>(status, out var kycStatus))
+            query = query.Where(k => k.Status == kycStatus);
+        else
+            query = query.Where(k => k.Status == KycStatus.Pending || k.Status == KycStatus.InReview);
+
+        query = query.OrderBy(k => k.CreatedAt);
 
         var total = await query.CountAsync();
         var items = await query

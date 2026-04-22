@@ -56,7 +56,11 @@ public class UsersController : ControllerBase
         if (request.FirstName != null) user.FirstName = request.FirstName;
         if (request.LastName != null) user.LastName = request.LastName;
         if (request.Bio != null) user.Bio = request.Bio;
-        if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
+        if (request.PhoneNumber != null)
+        {
+            user.PhoneNumber = request.PhoneNumber;
+            user.IsPhoneVerified = !string.IsNullOrWhiteSpace(request.PhoneNumber);
+        }
 
         await _userManager.UpdateAsync(user);
         return Ok(_mapper.Map<UserDto>(user));
@@ -199,6 +203,39 @@ public class UsersController : ControllerBase
             _db.FavoriteCars.Remove(fav);
             await _db.SaveChangesAsync();
         }
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountRequest request)
+    {
+        var userId = GetUserId();
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) return NotFound();
+
+        // Require password confirmation
+        var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+        if (!passwordValid)
+            return BadRequest(new ProblemDetails { Title = "Incorrect password." });
+
+        // Check for active bookings (as guest or host)
+        var hasActiveBookings = await _db.Bookings.AnyAsync(b =>
+            (b.GuestId == userId || b.Car.OwnerId == userId) &&
+            (b.Status == Models.Enums.BookingStatus.Confirmed ||
+             b.Status == Models.Enums.BookingStatus.InProgress));
+
+        if (hasActiveBookings)
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Cannot delete account with active bookings.",
+                Detail = "You have bookings that are confirmed or in progress. Please resolve them before deleting your account."
+            });
+
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+            return StatusCode(500, new ProblemDetails { Title = "Failed to delete account." });
+
         return NoContent();
     }
 

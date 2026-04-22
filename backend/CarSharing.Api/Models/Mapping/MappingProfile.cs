@@ -56,8 +56,12 @@ public class MappingProfile : Profile
             .ForMember(d => d.UnreadCount, o => o.Ignore());
 
         CreateMap<Message, MessageDto>()
-            .ForMember(d => d.SenderName, o => o.MapFrom(s => $"{s.Sender.FirstName} {s.Sender.LastName}"))
-            .ForMember(d => d.SenderPhotoUrl, o => o.MapFrom(s => s.Sender.ProfilePhotoUrl));
+            .ForMember(d => d.SenderName, o => o.MapFrom(s => s.Sender != null
+                ? $"{s.Sender.FirstName} {s.Sender.LastName}".Trim()
+                : "System"))
+            .ForMember(d => d.SenderPhotoUrl, o => o.MapFrom(s => s.Sender != null ? s.Sender.ProfilePhotoUrl : null))
+            .ForMember(d => d.Type, o => o.MapFrom(s => s.Type.ToString()))
+            .ForMember(d => d.BookingPreview, o => o.Ignore());
 
         CreateMap<Notification, NotificationDto>();
     }

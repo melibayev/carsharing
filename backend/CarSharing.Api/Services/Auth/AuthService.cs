@@ -1,6 +1,7 @@
 using AutoMapper;
 using CarSharing.Api.Models.Dtos;
 using CarSharing.Api.Models.Entities;
+using CarSharing.Api.Models.Enums;
 using CarSharing.Api.Services.Email;
 using Microsoft.AspNetCore.Identity;
 
@@ -12,6 +13,7 @@ public class AuthService : IAuthService
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IEmailService _emailService;
+    private readonly IEmailVerificationService _emailVerificationService;
     private readonly IMapper _mapper;
     private readonly ILogger<AuthService> _logger;
 
@@ -20,6 +22,7 @@ public class AuthService : IAuthService
         IJwtService jwtService,
         IRefreshTokenService refreshTokenService,
         IEmailService emailService,
+        IEmailVerificationService emailVerificationService,
         IMapper mapper,
         ILogger<AuthService> logger)
     {
@@ -27,16 +30,20 @@ public class AuthService : IAuthService
         _jwtService = jwtService;
         _refreshTokenService = refreshTokenService;
         _emailService = emailService;
+        _emailVerificationService = emailVerificationService;
         _mapper = mapper;
         _logger = logger;
     }
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    public async Task<AuthResponse> RegisterAsync(
+        RegisterRequest request,
+        string? ipAddress = null,
+        string? userAgent = null)
     {
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser != null)
         {
-            throw new InvalidOperationException("A user with this email already exists.");
+            throw new InvalidOperationException("That email cannot be used.");
         }
 
         var user = new ApplicationUser
@@ -45,7 +52,8 @@ public class AuthService : IAuthService
             Email = request.Email,
             FirstName = request.FirstName,
             LastName = request.LastName,
-            DateOfBirth = request.DateOfBirth
+            DateOfBirth = request.DateOfBirth,
+            OnboardingStatus = ProfileCompletionStatus.Step1Done,
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
@@ -57,8 +65,9 @@ public class AuthService : IAuthService
 
         await _userManager.AddToRoleAsync(user, "User");
 
-        var emailToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        await _emailService.SendVerificationEmailAsync(user.Email, user.FirstName, emailToken);
+        // Issue verification code and send email (code returned only in Development)
+        _ = await _emailVerificationService.IssueAndSendAsync(
+            user.Id, user.Email!, user.FirstName, ipAddress, userAgent);
 
         _logger.LogInformation("User {Email} registered successfully", user.Email);
 

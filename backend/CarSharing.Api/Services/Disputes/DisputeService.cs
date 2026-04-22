@@ -73,9 +73,7 @@ public class DisputeService : IDisputeService
                 Status = d.Status,
                 Category = d.Category,
                 Description = d.Description,
-                EvidenceUrls = d.EvidenceUrls != null
-                    ? JsonSerializer.Deserialize<List<string>>(d.EvidenceUrls) ?? new()
-                    : new(),
+                EvidenceUrls = new List<string>(),
                 Resolution = d.Resolution,
                 RefundAmount = d.RefundAmount,
                 ResolvedAt = d.ResolvedAt,
@@ -127,9 +125,7 @@ public class DisputeService : IDisputeService
                 Status = d.Status,
                 Category = d.Category,
                 Description = d.Description,
-                EvidenceUrls = d.EvidenceUrls != null
-                    ? JsonSerializer.Deserialize<List<string>>(d.EvidenceUrls) ?? new()
-                    : new(),
+                EvidenceUrls = new List<string>(),
                 Resolution = d.Resolution,
                 RefundAmount = d.RefundAmount,
                 ResolvedAt = d.ResolvedAt,

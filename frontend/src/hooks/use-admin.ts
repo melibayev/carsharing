@@ -5,6 +5,7 @@ import type {
   AdminUserDto,
   AdminFinanceDto,
   AdminCarDto,
+  AdminCarDetailDto,
   AdminBookingDto,
   DisputeDto,
   KycVerificationDto,
@@ -32,23 +33,34 @@ export function useAdminUsers(page = 1) {
   });
 }
 
-export function useAdminBookings(page = 1) {
+export function useAdminBookings(status?: string, page = 1) {
   return useQuery({
-    queryKey: ['admin', 'bookings', page],
+    queryKey: ['admin', 'bookings', status, page],
     queryFn: async () => {
-      const res = await api.get<PagedResult<AdminBookingDto>>('/admin/bookings', { params: { page } });
+      const res = await api.get<PagedResult<AdminBookingDto>>('/admin/bookings', { params: { status, page } });
       return res.data;
     },
   });
 }
 
-export function useAdminCars(page = 1) {
+export function useAdminCars(status?: string, page = 1) {
   return useQuery({
-    queryKey: ['admin', 'cars', page],
+    queryKey: ['admin', 'cars', status, page],
     queryFn: async () => {
-      const res = await api.get<PagedResult<AdminCarDto>>('/admin/cars', { params: { page } });
+      const res = await api.get<PagedResult<AdminCarDto>>('/admin/cars', { params: { status, page } });
       return res.data;
     },
+  });
+}
+
+export function useAdminCarDetail(carId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'cars', carId],
+    queryFn: async () => {
+      const res = await api.get<AdminCarDetailDto>(`/admin/cars/${carId}`);
+      return res.data;
+    },
+    enabled: !!carId,
   });
 }
 
@@ -58,18 +70,6 @@ export function useAdminDisputes(status?: string, page = 1) {
     queryFn: async () => {
       const res = await api.get<PagedResult<DisputeDto>>('/admin/disputes', {
         params: { status, page },
-      });
-      return res.data;
-    },
-  });
-}
-
-export function useAdminVerifications(page = 1) {
-  return useQuery({
-    queryKey: ['admin', 'verifications', page],
-    queryFn: async () => {
-      const res = await api.get<PagedResult<KycVerificationDto>>('/admin/verifications', {
-        params: { page },
       });
       return res.data;
     },
@@ -203,6 +203,44 @@ export function useRejectCar() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'cars'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'metrics'] });
+    },
+  });
+}
+
+export function useAdminApproveBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (bookingId: string) => {
+      await api.post(`/admin/bookings/${bookingId}/approve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'metrics'] });
+    },
+  });
+}
+
+export function useAdminRejectBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      await api.post(`/admin/bookings/${id}/reject`, { reason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'metrics'] });
+    },
+  });
+}
+
+export function useAdminVerifications(status?: string, page = 1) {
+  return useQuery({
+    queryKey: ['admin', 'verifications', status, page],
+    queryFn: async () => {
+      const res = await api.get<PagedResult<KycVerificationDto>>('/admin/verifications', {
+        params: { status, page },
+      });
+      return res.data;
     },
   });
 }

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using CarSharing.Api.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarSharing.Api.Middleware;
@@ -29,6 +30,24 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        if (exception is RateLimitException rle)
+        {
+            if (rle.RetryAfterSeconds.HasValue)
+                context.Response.Headers["Retry-After"] = rle.RetryAfterSeconds.Value.ToString();
+            context.Response.ContentType = "application/problem+json";
+            context.Response.StatusCode = 429;
+            var rateProblem = new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc6585#section-4",
+                Title = "Too Many Requests",
+                Status = 429,
+                Detail = exception.Message
+            };
+            var rateOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            await context.Response.WriteAsJsonAsync(rateProblem, rateOptions);
+            return;
+        }
+
         var (statusCode, title) = exception switch
         {
             KeyNotFoundException => (HttpStatusCode.NotFound, "Not Found"),

@@ -25,6 +25,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
     public DbSet<KycVerification> KycVerifications => Set<KycVerification>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Dispute> Disputes => Set<Dispute>();
+    public DbSet<PayoutMethod> PayoutMethods => Set<PayoutMethod>();
+    public DbSet<CarDraft> CarDrafts => Set<CarDraft>();
+    public DbSet<CarDraftDocument> CarDraftDocuments => Set<CarDraftDocument>();
+    public DbSet<EmailVerificationCode> EmailVerificationCodes => Set<EmailVerificationCode>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

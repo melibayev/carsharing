@@ -48,10 +48,10 @@ export function CarCard({ car }: CarCardProps) {
   };
 
   return (
-    <Link to={`/cars/${car.id}`}>
-      <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full rounded-2xl">
-          <div className="relative aspect-[4/3] bg-muted">
+    <Link to={`/cars/${car.id}`} className="h-full block">
+      <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="h-full">
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full rounded-2xl flex flex-col">
+          <div className="relative aspect-[4/3] bg-muted shrink-0">
             {photoUrl ? (
               <img src={photoUrl} alt={`${car.year} ${car.make} ${car.model}`} className="object-cover w-full h-full" />
             ) : (
@@ -77,7 +77,7 @@ export function CarCard({ car }: CarCardProps) {
               </button>
             )}
           </div>
-          <CardContent className="p-4 space-y-2">
+          <CardContent className="p-4 space-y-2 flex flex-col flex-1">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-heading font-semibold">
@@ -99,7 +99,7 @@ export function CarCard({ car }: CarCardProps) {
               <span>{car.tripCount} trips</span>
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mt-auto">
               <Badge variant="outline" className="text-xs gap-1">
                 {bodyTypeLabels[car.bodyType] ?? 'Sedan'}
               </Badge>

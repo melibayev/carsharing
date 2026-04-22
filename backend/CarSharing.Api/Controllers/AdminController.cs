@@ -130,7 +130,8 @@ public class AdminController : ControllerBase
         var items = users.Select(u => new AdminUserDto(
             u.Id, u.Email ?? "", u.FirstName, u.LastName,
             u.IsIdentityVerified, u.HostTripCount, u.GuestTripCount,
-            u.CreatedAt, u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow
+            u.CreatedAt, u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow,
+            u.PhoneNumber
         )).ToList();
 
         return Ok(new PagedResult<AdminUserDto>(items, totalCount, page, pageSize));
@@ -168,43 +169,146 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("bookings")]
-    public async Task<ActionResult<PagedResult<BookingDto>>> GetBookings(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PagedResult<AdminBookingDto>>> GetBookings(
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = _db.Bookings
             .Include(b => b.Car).ThenInclude(c => c.Photos)
             .Include(b => b.Car).ThenInclude(c => c.Owner)
             .Include(b => b.Guest)
-            .OrderByDescending(b => b.CreatedAt);
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<BookingStatus>(status, out var bookingStatus))
+            query = query.Where(b => b.Status == bookingStatus);
+
+        query = query.OrderByDescending(b => b.CreatedAt);
 
         var totalCount = await query.CountAsync();
-        var items = await query
+        var bookings = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        return Ok(new PagedResult<BookingDto>(
-            _mapper.Map<List<BookingDto>>(items), totalCount, page, pageSize));
+        var items = bookings.Select(b => new AdminBookingDto(
+            b.Id,
+            $"{b.Car.Year} {b.Car.Make} {b.Car.Model}",
+            b.Car.Photos.OrderBy(p => p.SortOrder).FirstOrDefault(p => p.IsCover)?.Url
+                ?? b.Car.Photos.OrderBy(p => p.SortOrder).FirstOrDefault()?.Url,
+            $"{b.Guest.FirstName} {b.Guest.LastName}",
+            b.Guest.Email ?? "",
+            b.Guest.PhoneNumber,
+            $"{b.Car.Owner.FirstName} {b.Car.Owner.LastName}",
+            b.Car.Owner.Email ?? "",
+            b.Status,
+            b.TotalChargedUsd,
+            b.StartUtc,
+            b.EndUtc,
+            b.CreatedAt,
+            b.GuestMessage,
+            b.ConfirmedAt
+        )).ToList();
+
+        return Ok(new PagedResult<AdminBookingDto>(items, totalCount, page, pageSize));
+    }
+
+    [HttpPost("bookings/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveBooking(Guid id)
+    {
+        var booking = await _db.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+        if (booking == null) return NotFound();
+        if (booking.Status != BookingStatus.PendingApproval)
+            return BadRequest(new { message = "Booking is not pending approval" });
+
+        booking.Status = BookingStatus.Confirmed;
+        booking.ConfirmedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok(new { id = booking.Id, status = booking.Status.ToString() });
+    }
+
+    [HttpPost("bookings/{id:guid}/reject")]
+    public async Task<IActionResult> RejectBooking(Guid id, [FromBody] RejectBookingRequest request)
+    {
+        var booking = await _db.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+        if (booking == null) return NotFound();
+        if (booking.Status != BookingStatus.PendingApproval)
+            return BadRequest(new { message = "Booking is not pending approval" });
+
+        booking.Status = BookingStatus.Rejected;
+        booking.HostResponseMessage = request.Reason;
+        booking.CancelledAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+        return Ok();
     }
 
     [HttpGet("cars")]
-    public async Task<ActionResult<PagedResult<CarListDto>>> GetCars(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PagedResult<AdminCarDto>>> GetCars(
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = _db.Cars
             .Include(c => c.Owner)
             .Include(c => c.Photos)
-            .Where(c => c.Status != CarStatus.Removed)
-            .OrderByDescending(c => c.CreatedAt);
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<CarStatus>(status, out var carStatus))
+            query = query.Where(c => c.Status == carStatus);
+        else
+            query = query.Where(c => c.Status != CarStatus.Removed);
+
+        query = query.OrderByDescending(c => c.CreatedAt);
 
         var totalCount = await query.CountAsync();
-        var items = await query
+        var cars = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
-        return Ok(new PagedResult<CarListDto>(
-            _mapper.Map<List<CarListDto>>(items), totalCount, page, pageSize));
+        var items = cars.Select(c => new AdminCarDto(
+            c.Id, c.Make, c.Model, c.Year, c.City,
+            c.DailyPriceUsd, c.Status, $"{c.Owner.FirstName} {c.Owner.LastName}",
+            c.Owner.Email ?? "", c.AverageRating, c.TripCount, c.CreatedAt,
+            c.Photos.OrderBy(p => p.SortOrder).FirstOrDefault(p => p.IsCover)?.Url
+                ?? c.Photos.OrderBy(p => p.SortOrder).FirstOrDefault()?.Url,
+            c.VinMismatchFlagged
+        )).ToList();
+
+        return Ok(new PagedResult<AdminCarDto>(items, totalCount, page, pageSize));
+    }
+
+    [HttpGet("cars/{id:guid}")]
+    public async Task<ActionResult<AdminCarDetailDto>> GetCarDetail(Guid id)
+    {
+        var car = await _db.Cars
+            .Include(c => c.Owner)
+            .Include(c => c.Photos)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (car == null) return NotFound();
+
+        return Ok(new AdminCarDetailDto
+        {
+            Id = car.Id,
+            Make = car.Make,
+            Model = car.Model,
+            Year = car.Year,
+            Vin = car.Vin,
+            Color = car.Color,
+            LicensePlate = car.LicensePlate,
+            OwnerName = $"{car.Owner.FirstName} {car.Owner.LastName}",
+            OwnerEmail = car.Owner.Email ?? "",
+            OwnerPhone = car.Owner.PhoneNumber,
+            TechPassportFrontUrl = car.TechPassportFrontUrl,
+            TechPassportBackUrl = car.TechPassportBackUrl,
+            InsurancePolicyUrl = car.InsurancePolicyUrl,
+            InsuranceExpiry = car.InsuranceExpiry,
+            TechnicalInspectionUrl = car.TechnicalInspectionUrl,
+            TechnicalInspectionExpiry = car.TechnicalInspectionExpiry,
+            AuthorizationLetterUrl = car.AuthorizationLetterUrl,
+            GpsTrackerPhotoUrl = car.GpsTrackerPhotoUrl,
+            VinMismatchFlagged = car.VinMismatchFlagged,
+            OwnershipRelation = car.OwnershipRelation.ToString(),
+            PhotoUrls = car.Photos.OrderBy(p => p.SortOrder).Select(p => p.Url).ToList(),
+            CreatedAt = car.CreatedAt,
+        });
     }
 
     [HttpGet("disputes")]
@@ -242,9 +346,9 @@ public class AdminController : ControllerBase
     // === KYC Verification ===
     [HttpGet("verifications")]
     public async Task<ActionResult<PagedResult<KycVerificationDto>>> GetVerifications(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _kycService.GetPendingAsync(page, pageSize);
+        var result = await _kycService.GetPendingAsync(page, pageSize, status);
         return Ok(result);
     }
 

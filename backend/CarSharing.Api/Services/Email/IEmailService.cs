@@ -8,4 +8,6 @@ public interface IEmailService
     Task SendBookingConfirmedEmailAsync(string guestEmail, string guestName, string carTitle);
     Task SendBookingRejectedEmailAsync(string guestEmail, string guestName, string carTitle, string reason);
     Task SendGenericEmailAsync(string toEmail, string subject, string htmlBody);
+    /// <summary>Send a 6-digit verification code. The <paramref name="code"/> leaves the server only here.</summary>
+    Task SendEmailVerificationCodeAsync(string email, string firstName, string code);
 }

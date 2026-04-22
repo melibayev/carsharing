@@ -86,3 +86,17 @@ export function usePublicProfile(userId: string) {
     enabled: !!userId,
   });
 }
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+  const logout = useAuthStore((s) => s.logout);
+  return useMutation({
+    mutationFn: async (password: string) => {
+      await api.delete('/users/me', { data: { password } });
+    },
+    onSuccess: () => {
+      logout();
+      queryClient.clear();
+    },
+  });
+}

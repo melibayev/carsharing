@@ -44,6 +44,22 @@ public class MessagesController : ControllerBase
         return Ok(message);
     }
 
+    [HttpPost("conversations/{bookingId:guid}/read")]
+    public async Task<IActionResult> MarkAsRead(Guid bookingId)
+    {
+        var userId = GetUserId();
+        await _messageService.MarkConversationReadByBookingAsync(bookingId, userId);
+        return NoContent();
+    }
+
+    [HttpGet("conversations/unread-count")]
+    public async Task<ActionResult<int>> GetUnreadCount()
+    {
+        var userId = GetUserId();
+        var count = await _messageService.GetTotalUnreadCountAsync(userId);
+        return Ok(count);
+    }
+
     private Guid GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

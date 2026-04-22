@@ -6,6 +6,6 @@ public interface IKycService
 {
     Task<KycVerificationDto> SubmitAsync(SubmitKycRequest request, Guid userId);
     Task<KycVerificationDto?> GetLatestForUserAsync(Guid userId);
-    Task<PagedResult<KycVerificationDto>> GetPendingAsync(int page, int pageSize);
+    Task<PagedResult<KycVerificationDto>> GetPendingAsync(int page, int pageSize, string? status = null);
     Task<KycVerificationDto> ReviewAsync(Guid kycId, ReviewKycRequest request, Guid reviewerId);
 }

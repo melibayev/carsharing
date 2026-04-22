@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [usersPage] = useState(1);
   const [bookingsPage] = useState(1);
   const { data: users, isLoading: usersLoading } = useAdminUsers(usersPage);
-  const { data: bookings, isLoading: bookingsLoading } = useAdminBookings(bookingsPage);
+  const { data: bookings, isLoading: bookingsLoading } = useAdminBookings(undefined, bookingsPage);
   const banMutation = useBanUser();
   const unbanMutation = useUnbanUser();
   const verifyMutation = useVerifyUser();

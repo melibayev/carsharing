@@ -253,8 +253,8 @@ export default function BookingDetailPage() {
             <Star className="h-4 w-4" /> Write Review
           </Button>
         )}
-        <Button variant="outline" onClick={() => navigate(`/messages`)} className="gap-2">
-          <MessageSquare className="h-4 w-4" /> Messages
+        <Button variant="outline" onClick={() => navigate(`/messages/${booking.id}`)} className="gap-2">
+          <MessageSquare className="h-4 w-4" /> Open conversation
         </Button>
       </div>
 

@@ -50,9 +50,11 @@ services:
       Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME:-}
       Cloudinary__ApiKey: ${CLOUDINARY_API_KEY:-}
       Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET:-}
-      Smtp__Host: ${SMTP_HOST:-mailhog}
-      Smtp__Port: ${SMTP_PORT:-1025}
-      Smtp__From: ${SMTP_FROM:-hello@CarSharing.dev}
+      Smtp__Host: ${SMTP_HOST:-smtp-relay.brevo.com}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__From: ${SMTP_FROM:-}
       App__RunMigrationsOnStartup: ${RUN_MIGRATIONS_ON_STARTUP:-true}
       App__SeedOnStartup: ${SEED_ON_STARTUP:-true}
       App__AutoApproveCarsInDev: ${AUTO_APPROVE_CARS_IN_DEV:-true}

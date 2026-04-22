@@ -18,6 +18,8 @@ using CarSharing.Api.Services.Uploads;
 using CarSharing.Api.Services.Audit;
 using CarSharing.Api.Services.Disputes;
 using CarSharing.Api.Services.Verification;
+using StackExchange.Redis;
+using CarSharing.Api.Services.Host;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Hangfire;
@@ -164,6 +166,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+
+        // Redis (used for rate limiting in EmailVerificationService)
+        var redisConn = config.GetConnectionString("Redis") ?? "localhost:6379";
+        services.AddSingleton<IConnectionMultiplexer>(
+            ConnectionMultiplexer.Connect(redisConn));
 
         // Cars
         services.AddScoped<ICarService, CarService>();
@@ -216,6 +224,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BookingExpiryJob>();
         services.AddScoped<PayoutJob>();
         services.AddScoped<ReviewReminderJob>();
+        services.AddScoped<HostOnboardingReminderJob>();
+
+        // Host services
+        services.AddScoped<IHostEligibilityService, HostEligibilityService>();
+        services.AddScoped<IListingReviewService, ListingReviewService>();
 
         // AutoMapper
         services.AddAutoMapper(typeof(MappingProfile));

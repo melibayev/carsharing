@@ -7,7 +7,9 @@ public record RegisterRequest(string Email, string Password, string FirstName, s
 public record LoginRequest(string Email, string Password);
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Token, string NewPassword);
+public record VerifyEmailCodeRequest(string Code);
 public record AuthResponse(string AccessToken, UserDto User);
+public record DeleteAccountRequest(string Password);
 
 // === User DTOs ===
 public class UserDto
@@ -26,6 +28,9 @@ public class UserDto
     public int HostTripCount { get; set; }
     public int GuestTripCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? DateOfBirth { get; set; }
+    public string HostOnboardingStatus { get; set; } = "NotStarted";
+    public bool EmailConfirmed { get; set; }
 }
 
 public class UserPublicDto
@@ -240,13 +245,31 @@ public class ConversationDto
     public int UnreadCount { get; set; }
 }
 
+public class BookingPreviewDto
+{
+    public Guid BookingId { get; set; }
+    public string CarTitle { get; set; } = "";
+    public string? CarPhotoUrl { get; set; }
+    public string City { get; set; } = "";
+    public int Seats { get; set; }
+    public string FuelType { get; set; } = "";
+    public DateTimeOffset StartUtc { get; set; }
+    public DateTimeOffset EndUtc { get; set; }
+    public decimal TotalUsd { get; set; }
+    public string Status { get; set; } = "";
+    public int Days { get; set; }
+}
+
 public class MessageDto
 {
     public Guid Id { get; set; }
     public Guid SenderId { get; set; }
     public string SenderName { get; set; } = "";
     public string? SenderPhotoUrl { get; set; }
-    public string Body { get; set; } = "";
+    public string Type { get; set; } = "Text";
+    public string? Body { get; set; }
+    public string? AttachmentUrl { get; set; }
+    public BookingPreviewDto? BookingPreview { get; set; }
     public DateTimeOffset SentAt { get; set; }
     public DateTimeOffset? ReadAt { get; set; }
 }
@@ -265,6 +288,108 @@ public class NotificationDto
     public DateTimeOffset CreatedAt { get; set; }
 }
 
+// === Host DTOs ===
+public record EligibilityDto(bool CanList, List<string> Missing);
+
+public class PayoutMethodDto
+{
+    public Guid Id { get; set; }
+    public string Type { get; set; } = "";
+    public string Brand { get; set; } = "";
+    public string Last4 { get; set; } = "";
+    public string HolderName { get; set; } = "";
+    public string? BankName { get; set; }
+    public bool IsDefault { get; set; }
+    public DateTimeOffset AddedAt { get; set; }
+}
+
+public record AttachPayoutMethodRequest(
+    string Type, // UzcardCard | HumoCard | VisaMasterCard | BankAccountUZS | BankAccountUSD
+    string Brand,
+    string Last4,
+    string HolderName,
+    string? BankName,
+    string TokenizedDetails // card number or account number, encrypted by client
+);
+
+public record SignAgreementRequest(string Version);
+
+public class CarDraftDto
+{
+    public Guid Id { get; set; }
+    public string CurrentStep { get; set; } = "";
+    public string? PlateNumber { get; set; }
+    public string? Vin { get; set; }
+    public string? Make { get; set; }
+    public string? Model { get; set; }
+    public int? Year { get; set; }
+    public string? Trim { get; set; }
+    public string? Color { get; set; }
+    public int? OdometerKm { get; set; }
+    public string? Transmission { get; set; }
+    public string? FuelType { get; set; }
+    public int? Seats { get; set; }
+    public int? Doors { get; set; }
+    public string? BodyType { get; set; }
+    public string? VehicleTier { get; set; }
+    public string? OwnershipRelation { get; set; }
+    public string? InsurancePolicyUrl { get; set; }
+    public DateTimeOffset? InsuranceExpiry { get; set; }
+    public string? TechnicalInspectionUrl { get; set; }
+    public DateTimeOffset? TechnicalInspectionExpiry { get; set; }
+    public bool GpsTrackerInstalled { get; set; }
+    public string? PhotosJson { get; set; }
+    public string? AddressLine { get; set; }
+    public string? City { get; set; }
+    public string? Region { get; set; }
+    public string? PostalCode { get; set; }
+    public decimal? Lat { get; set; }
+    public decimal? Lng { get; set; }
+    public int PrivacyRadiusMeters { get; set; } = 300;
+    public bool CanDeliverToAirports { get; set; }
+    public string? DeliveryLocationsJson { get; set; }
+    public bool SelfCheckInAvailable { get; set; }
+    public string? SelfCheckInMethod { get; set; }
+    public int AdvanceNoticeHours { get; set; } = 24;
+    public int MinTripDays { get; set; } = 1;
+    public int MaxTripDays { get; set; } = 30;
+    public string? BlockedDatesJson { get; set; }
+    public decimal? DailyPriceUzs { get; set; }
+    public int WeeklyDiscountPercent { get; set; }
+    public int MonthlyDiscountPercent { get; set; }
+    public decimal CleaningFeeUzs { get; set; }
+    public decimal SecurityDepositUzs { get; set; }
+    public int DailyKmLimit { get; set; } = 300;
+    public decimal ExtraKmFeeUzs { get; set; }
+    public string? Rules { get; set; }
+    public string? CustomRules { get; set; }
+    public bool IsInstantBook { get; set; }
+    public string? Description { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public record PatchDraftRequest(
+    string? PlateNumber, string? Vin, string? Make, string? Model, int? Year,
+    string? Trim, string? Color, int? OdometerKm, string? Transmission,
+    string? FuelType, int? Seats, int? Doors, string? BodyType,
+    string? OwnershipRelation, string? InsurancePolicyUrl, DateTimeOffset? InsuranceExpiry,
+    string? TechnicalInspectionUrl, DateTimeOffset? TechnicalInspectionExpiry,
+    bool? GpsTrackerInstalled, string? PhotosJson, string? AddressLine, string? City,
+    string? Region, string? PostalCode, decimal? Lat, decimal? Lng,
+    int? PrivacyRadiusMeters, bool? CanDeliverToAirports, string? DeliveryLocationsJson,
+    bool? SelfCheckInAvailable, string? SelfCheckInMethod, int? AdvanceNoticeHours,
+    int? MinTripDays, int? MaxTripDays, string? BlockedDatesJson,
+    decimal? DailyPriceUzs, int? WeeklyDiscountPercent, int? MonthlyDiscountPercent,
+    decimal? CleaningFeeUzs, decimal? SecurityDepositUzs, int? DailyKmLimit,
+    decimal? ExtraKmFeeUzs, string? Rules, string? CustomRules,
+    bool? IsInstantBook, string? Description, string? CurrentStep
+);
+
+public record SubmitDraftResponse(Guid CarId, string Status, int EstimatedReviewMinutes);
+
+public record VinAvailableResponse(bool Available);
+
 // === Admin DTOs ===
 public record AdminMetricsDto(
     int TotalUsers, int TotalCars, int TotalBookings,
@@ -277,7 +402,50 @@ public record RecentActivityDto(string Type, string Description, DateTimeOffset 
 public record AdminUserDto(
     Guid Id, string Email, string FirstName, string LastName,
     bool IsIdentityVerified, int HostTripCount, int GuestTripCount,
-    DateTimeOffset CreatedAt, bool IsBanned);
+    DateTimeOffset CreatedAt, bool IsBanned, string? PhoneNumber = null);
+
+public record AdminBookingDto(
+    Guid Id,
+    string CarTitle,
+    string? CoverPhotoUrl,
+    string GuestName,
+    string GuestEmail,
+    string? GuestPhone,
+    string HostName,
+    string HostEmail,
+    BookingStatus Status,
+    decimal TotalChargedUsd,
+    DateTimeOffset StartUtc,
+    DateTimeOffset EndUtc,
+    DateTimeOffset CreatedAt,
+    string? GuestMessage,
+    DateTimeOffset? ConfirmedAt);
+
+public class AdminCarDetailDto
+{
+    public Guid Id { get; set; }
+    public string Make { get; set; } = "";
+    public string Model { get; set; } = "";
+    public int Year { get; set; }
+    public string? Vin { get; set; }
+    public string? Color { get; set; }
+    public string? LicensePlate { get; set; }
+    public string OwnerName { get; set; } = "";
+    public string OwnerEmail { get; set; } = "";
+    public string? OwnerPhone { get; set; }
+    public string? TechPassportFrontUrl { get; set; }
+    public string? TechPassportBackUrl { get; set; }
+    public string? InsurancePolicyUrl { get; set; }
+    public DateTimeOffset? InsuranceExpiry { get; set; }
+    public string? TechnicalInspectionUrl { get; set; }
+    public DateTimeOffset? TechnicalInspectionExpiry { get; set; }
+    public string? AuthorizationLetterUrl { get; set; }
+    public string? GpsTrackerPhotoUrl { get; set; }
+    public bool VinMismatchFlagged { get; set; }
+    public string OwnershipRelation { get; set; } = "";
+    public List<string> PhotoUrls { get; set; } = new();
+    public DateTimeOffset CreatedAt { get; set; }
+}
 
 // === Common ===
 public record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSize);
@@ -366,13 +534,7 @@ public record AdminCarDto(
     Guid Id, string Make, string Model, int Year, string City,
     decimal DailyPriceUsd, CarStatus Status, string OwnerName,
     string OwnerEmail, decimal AverageRating, int TripCount,
-    DateTimeOffset CreatedAt);
-
-public record AdminBookingDto(
-    Guid Id, string CarTitle, string GuestName, string HostName,
-    BookingStatus Status, decimal TotalChargedUsd,
-    DateTimeOffset StartUtc, DateTimeOffset EndUtc,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt, string? CoverPhotoUrl = null, bool VinMismatchFlagged = false);
 
 public record AdminFinanceDto(
     decimal TotalRevenue, decimal MonthlyRevenue,
@@ -391,6 +553,28 @@ public class OnboardingStatusDto
     public string Email { get; set; } = "";
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
+    public string? MiddleName { get; set; }
+    public DateTimeOffset? DateOfBirth { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? HomeAddressLine { get; set; }
+    public string? HomeCity { get; set; }
+    public string? HomeRegionId { get; set; }
+    public string? HomePostalCode { get; set; }
+    public string? Gender { get; set; }
+    public string? LicenseIssuedCountry { get; set; }
+    public string? LicenseIssuedRegionId { get; set; }
+    public DateTimeOffset? DriverLicenseExpiry { get; set; }
+    public string? DriverLicensePhotoUrl { get; set; }
+    public string? DriverLicenseBackUrl { get; set; }
+    public string? DriverLicenseSelfieUrl { get; set; }
+    public string? IdentityDocumentType { get; set; }
+    public string? IdentityDocumentFrontUrl { get; set; }
+    public string? IdentityDocumentBackUrl { get; set; }
+    public string? IdentitySelfieUrl { get; set; }
+    public bool Step4Skipped { get; set; }
+    public string? CardLast4 { get; set; }
+    public string? CardBrand { get; set; }
+    public string? CardholderName { get; set; }
 }
 
 public record OnboardingStep2Request(
@@ -398,26 +582,38 @@ public record OnboardingStep2Request(
     string LastName,
     string? MiddleName,
     DateTimeOffset DateOfBirth,
+    string? Gender,
     string PhoneNumber,
-    string AddressLine1,
-    string AddressCity,
-    string AddressRegion,
-    string AddressPostalCode);
+    string HomeAddressLine,
+    string HomeCity,
+    string HomeRegionId,
+    string? HomePostalCode,
+    decimal? HomeLat,
+    decimal? HomeLng);
 
 public record OnboardingStep3Request(
     string DriverLicenseNumber,
     DateTimeOffset DriverLicenseExpiry,
-    string DriverLicensePhotoUrl);
+    string DriverLicensePhotoUrl,
+    string DriverLicenseBackUrl,
+    string DriverLicenseSelfieUrl,
+    string? LicenseIssuedCountry,
+    string? LicenseIssuedRegionId);
 
 public record OnboardingStep4Request(
-    string NationalIdNumber,
-    string NationalIdFrontUrl,
-    string? NationalIdBackUrl,
-    string SelfieUrl);
+    bool Skipped,
+    string? DocumentType,
+    string? DocumentNumber,
+    string? DocumentFrontUrl,
+    string? DocumentBackUrl,
+    string? SelfieUrl);
 
 public record OnboardingStep5Request(
-    string PaymentMethodLast4,
-    string PaymentMethodBrand);
+    string CardholderName,
+    string Last4,
+    string Brand,
+    string Expiry,
+    string? BillingAddressJson);
 
 public record DocumentUploadResponse(string Url);
 

@@ -14,9 +14,18 @@ const BookingDetail = lazy(() => import('@/pages/booking-detail'));
 const Messages = lazy(() => import('@/pages/messages'));
 const Notifications = lazy(() => import('@/pages/notifications'));
 const Profile = lazy(() => import('@/pages/profile'));
-const HostNewCar = lazy(() => import('@/pages/host-new-car'));
 const KycWizard = lazy(() => import('@/pages/kyc'));
 const Onboarding = lazy(() => import('@/pages/onboarding'));
+const VerifyEmail = lazy(() => import('@/pages/onboarding/verify-email'));
+
+const MyBookings = lazy(() => import('@/pages/my-bookings'));
+const BecomeAHost = lazy(() => import('@/pages/host/become-a-host'));
+const HostShell = lazy(() => import('@/components/host/HostShell'));
+const HostDashboard = lazy(() => import('@/pages/host/index'));
+const HostCars = lazy(() => import('@/pages/host/cars/index'));
+const HostCarNew = lazy(() => import('@/pages/host/cars/new'));
+const HostBookings = lazy(() => import('@/pages/host/bookings'));
+const HostEarnings = lazy(() => import('@/pages/host/earnings'));
 
 const AdminShell = lazy(() => import('@/components/admin/AdminShell'));
 const AdminDashboard = lazy(() => import('@/pages/admin/index'));
@@ -40,14 +49,17 @@ export default function App() {
   return (
     <Suspense fallback={<Spinner />}>
       <Routes>
+        {/* Standalone pages (no navbar/footer) */}
+        <Route path="register" element={<Register />} />
+        <Route path="onboarding" element={<Onboarding />} />
+        <Route path="onboarding/verify-email" element={<VerifyEmail />} />
+
         <Route element={<RootLayout />}>
           {/* Public */}
           <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
           <Route path="search" element={<Search />} />
           <Route path="cars/:id" element={<CarDetail />} />
-          <Route path="onboarding" element={<Onboarding />} />
 
           {/* Auth required */}
           <Route element={<AuthGuard />}>
@@ -57,7 +69,16 @@ export default function App() {
             <Route path="messages/:conversationId" element={<Messages />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="host/cars/new" element={<HostNewCar />} />
+            <Route path="my-bookings" element={<MyBookings />} />
+            <Route path="host/become-a-host" element={<BecomeAHost />} />
+            <Route path="host" element={<HostShell />}>
+              <Route index element={<HostDashboard />} />
+              <Route path="cars" element={<HostCars />} />
+              <Route path="cars/new" element={<HostCarNew />} />
+              <Route path="bookings" element={<HostBookings />} />
+              <Route path="bookings/:id" element={<BookingDetail />} />
+              <Route path="earnings" element={<HostEarnings />} />
+            </Route>
             <Route path="kyc" element={<KycWizard />} />
           </Route>
 

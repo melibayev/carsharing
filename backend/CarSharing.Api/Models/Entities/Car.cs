@@ -45,9 +45,31 @@ public class Car : AuditableEntity
 
     public string? Description { get; set; }
     public string? Rules { get; set; }
+    public int PrivacyRadiusMeters { get; set; } = 300;
+    public bool CanDeliverToAirports { get; set; }
+    public string? DeliveryLocationsJson { get; set; }
+    public bool SelfCheckInAvailable { get; set; }
+    public string? SelfCheckInMethod { get; set; }
+
+    // Ownership
+    public OwnershipRelation OwnershipRelation { get; set; } = OwnershipRelation.RegisteredOwner;
+    public string? TechPassportFrontUrl { get; set; }
+    public string? TechPassportBackUrl { get; set; }
+    public string? AuthorizationLetterUrl { get; set; }
+    public string? CompanyRegCertUrl { get; set; }
+    public string? InsurancePolicyUrl { get; set; }
+    public DateTimeOffset? InsuranceExpiry { get; set; }
+    public string? TechnicalInspectionUrl { get; set; }
+    public DateTimeOffset? TechnicalInspectionExpiry { get; set; }
+    public bool GpsTrackerInstalled { get; set; }
+    public string? GpsTrackerPhotoUrl { get; set; }
+    public string? OcrExtractedVin { get; set; }
+    public bool VinMismatchFlagged { get; set; }
+    public bool RequiresManualReview { get; set; }
 
     public CarStatus Status { get; set; } = CarStatus.Draft;
     public bool IsInstantBook { get; set; }
+    public VehicleTier VehicleTier { get; set; } = VehicleTier.Economy;
     public decimal AverageRating { get; set; }
     public int TripCount { get; set; }
 

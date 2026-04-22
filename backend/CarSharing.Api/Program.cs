@@ -44,6 +44,7 @@ try
     Log.Information("║        CarSharing API  v1.0          ║");
     Log.Information("║  Peer-to-peer car rental marketplace ║");
     Log.Information("╚══════════════════════════════════════╝");
+    Log.Information("Try verification flow: register at /register, then check Mailhog at http://localhost:8025 for the code.");
 
     // Middleware pipeline
     app.UseCustomMiddleware();
@@ -69,6 +70,7 @@ try
     app.MapControllers();
     app.MapHub<ChatHub>("/hubs/chat");
     app.MapHub<AdminHub>("/hubs/admin");
+    app.MapHub<HostHub>("/hubs/host");
     app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }));
 
     // Startup tasks

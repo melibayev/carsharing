@@ -100,6 +100,9 @@ export interface UserDto {
   hostTripCount: number;
   guestTripCount: number;
   createdAt: string;
+  dateOfBirth: string | null;
+  hostOnboardingStatus: HostOnboardingStatus;
+  emailConfirmed: boolean;
 }
 
 export interface UserPublicDto {
@@ -343,10 +346,27 @@ export interface ConversationDto {
   id: string;
   bookingId: string;
   carTitle: string;
+  carCity: string;
+  seats: number;
+  fuelType: string;
   coverPhotoUrl: string | null;
   otherParty: UserPublicDto | null;
   lastMessage: MessageDto | null;
   unreadCount: number;
+}
+
+export interface BookingPreviewDto {
+  bookingId: string;
+  carTitle: string;
+  carPhotoUrl: string | null;
+  city: string;
+  seats: number;
+  fuelType: string;
+  startUtc: string;
+  endUtc: string;
+  totalUsd: number;
+  status: string;
+  days: number;
 }
 
 export interface MessageDto {
@@ -354,7 +374,10 @@ export interface MessageDto {
   senderId: string;
   senderName: string;
   senderPhotoUrl: string | null;
-  body: string;
+  type: 'Text' | 'Image' | 'BookingCard';
+  body: string | null;
+  attachmentUrl: string | null;
+  bookingPreview: BookingPreviewDto | null;
   sentAt: string;
   readAt: string | null;
 }
@@ -402,6 +425,7 @@ export interface AdminUserDto {
   guestTripCount: number;
   createdAt: string;
   isBanned: boolean;
+  phoneNumber: string | null;
 }
 
 // === Common ===
@@ -531,18 +555,51 @@ export interface AdminCarDto {
   averageRating: number;
   tripCount: number;
   createdAt: string;
+  coverPhotoUrl: string | null;
+  vinMismatchFlagged: boolean;
+}
+
+export interface AdminCarDetailDto {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  vin: string | null;
+  color: string | null;
+  licensePlate: string | null;
+  ownerName: string;
+  ownerEmail: string;
+  ownerPhone: string | null;
+  techPassportFrontUrl: string | null;
+  techPassportBackUrl: string | null;
+  insurancePolicyUrl: string | null;
+  insuranceExpiry: string | null;
+  technicalInspectionUrl: string | null;
+  technicalInspectionExpiry: string | null;
+  authorizationLetterUrl: string | null;
+  gpsTrackerPhotoUrl: string | null;
+  vinMismatchFlagged: boolean;
+  ownershipRelation: string;
+  photoUrls: string[];
+  createdAt: string;
 }
 
 export interface AdminBookingDto {
   id: string;
   carTitle: string;
+  coverPhotoUrl: string | null;
   guestName: string;
+  guestEmail: string;
+  guestPhone: string | null;
   hostName: string;
+  hostEmail: string;
   status: BookingStatus;
   totalChargedUsd: number;
   startUtc: string;
   endUtc: string;
   createdAt: string;
+  guestMessage: string | null;
+  confirmedAt: string | null;
 }
 
 export interface AdminFinanceDto {
@@ -566,6 +623,7 @@ export interface MonthlyRevenueDto {
 // === Onboarding ===
 export enum ProfileCompletionStatus {
   Step1Done = 'Step1Done',
+  EmailVerified = 'EmailVerified',
   Step2Done = 'Step2Done',
   Step3Done = 'Step3Done',
   Step4Done = 'Step4Done',
@@ -580,6 +638,28 @@ export interface OnboardingStatusDto {
   email: string;
   firstName: string;
   lastName: string;
+  middleName?: string;
+  dateOfBirth?: string;
+  phoneNumber?: string;
+  homeAddressLine?: string;
+  homeCity?: string;
+  homeRegionId?: string;
+  homePostalCode?: string;
+  gender?: string;
+  licenseIssuedCountry?: string;
+  licenseIssuedRegionId?: string;
+  driverLicenseExpiry?: string;
+  driverLicensePhotoUrl?: string;
+  driverLicenseBackUrl?: string;
+  driverLicenseSelfieUrl?: string;
+  identityDocumentType?: string;
+  identityDocumentFrontUrl?: string;
+  identityDocumentBackUrl?: string;
+  identitySelfieUrl?: string;
+  step4Skipped: boolean;
+  cardLast4?: string;
+  cardBrand?: string;
+  cardholderName?: string;
 }
 
 export interface OnboardingStep2Request {
@@ -587,29 +667,41 @@ export interface OnboardingStep2Request {
   lastName: string;
   middleName?: string;
   dateOfBirth: string;
+  gender?: string;
   phoneNumber: string;
-  addressLine1: string;
-  addressCity: string;
-  addressRegion: string;
-  addressPostalCode: string;
+  homeAddressLine: string;
+  homeCity: string;
+  homeRegionId: string;
+  homePostalCode?: string;
+  homeLat?: number;
+  homeLng?: number;
 }
 
 export interface OnboardingStep3Request {
   driverLicenseNumber: string;
   driverLicenseExpiry: string;
   driverLicensePhotoUrl: string;
+  driverLicenseBackUrl: string;
+  driverLicenseSelfieUrl: string;
+  licenseIssuedCountry?: string;
+  licenseIssuedRegionId?: string;
 }
 
 export interface OnboardingStep4Request {
-  nationalIdNumber: string;
-  nationalIdFrontUrl: string;
-  nationalIdBackUrl?: string;
-  selfieUrl: string;
+  skipped: boolean;
+  documentType?: string;
+  documentNumber?: string;
+  documentFrontUrl?: string;
+  documentBackUrl?: string;
+  selfieUrl?: string;
 }
 
 export interface OnboardingStep5Request {
-  paymentMethodLast4: string;
-  paymentMethodBrand: string;
+  cardholderName: string;
+  last4: string;
+  brand: string;
+  expiry: string;
+  billingAddressJson?: string;
 }
 
 export interface DocumentUploadResponse {
@@ -618,4 +710,146 @@ export interface DocumentUploadResponse {
 
 export interface EmailAvailableResponse {
   available: boolean;
+}
+
+// === Host Phase Types ===
+
+export type HostOnboardingStatus =
+  | 'NotStarted'
+  | 'IdentityConfirmed'
+  | 'PayoutAdded'
+  | 'AgreementSigned'
+  | 'Complete';
+
+export type PayoutMethodType =
+  | 'UzcardCard'
+  | 'HumoCard'
+  | 'VisaMasterCard'
+  | 'BankAccountUZS'
+  | 'BankAccountUSD';
+
+export type VehicleTier = 'Economy' | 'Standard' | 'Premium' | 'Luxury';
+
+export type CarDraftStep =
+  | 'VehicleIdentity'
+  | 'OwnershipDocs'
+  | 'Photos'
+  | 'LocationAvailability'
+  | 'PricingRules'
+  | 'ReviewSubmit';
+
+export interface EligibilityDto {
+  canList: boolean;
+  missing: string[];
+}
+
+export interface PayoutMethodDto {
+  id: string;
+  type: PayoutMethodType;
+  brand: string;
+  last4: string;
+  holderName: string;
+  bankName?: string;
+  isDefault: boolean;
+  addedAt: string;
+}
+
+export interface AttachPayoutMethodRequest {
+  type: PayoutMethodType;
+  brand: string;
+  last4: string;
+  holderName: string;
+  bankName?: string;
+  tokenizedDetails: string;
+}
+
+export interface SignAgreementRequest {
+  version: string;
+}
+
+export interface CarDraftDto {
+  id: string;
+  currentStep: CarDraftStep;
+  plateNumber?: string;
+  vin?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  trim?: string;
+  color?: string;
+  odometerKm?: number;
+  transmission?: string;
+  fuelType?: string;
+  seats?: number;
+  doors?: number;
+  bodyType?: string;
+  vehicleTier?: string;
+  ownershipRelation?: string;
+  insurancePolicyUrl?: string;
+  insuranceExpiry?: string;
+  technicalInspectionUrl?: string;
+  technicalInspectionExpiry?: string;
+  gpsTrackerInstalled: boolean;
+  photosJson?: string;
+  addressLine?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  lat?: number;
+  lng?: number;
+  privacyRadiusMeters: number;
+  canDeliverToAirports: boolean;
+  deliveryLocationsJson?: string;
+  selfCheckInAvailable: boolean;
+  selfCheckInMethod?: string;
+  advanceNoticeHours: number;
+  minTripDays: number;
+  maxTripDays: number;
+  blockedDatesJson?: string;
+  dailyPriceUzs?: number;
+  weeklyDiscountPercent: number;
+  monthlyDiscountPercent: number;
+  cleaningFeeUzs: number;
+  securityDepositUzs: number;
+  dailyKmLimit: number;
+  extraKmFeeUzs: number;
+  rules?: string;
+  customRules?: string;
+  isInstantBook: boolean;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PatchDraftRequest = Partial<Omit<CarDraftDto, 'id' | 'createdAt' | 'updatedAt'>>;
+
+export interface SubmitDraftResponse {
+  carId: string;
+  status: string;
+  estimatedReviewMinutes: number;
+}
+
+export interface VinAvailableResponse {
+  available: boolean;
+}
+
+export interface HostDashboardDto {
+  revenueThisMonth: number;
+  lastMonthRevenue: number;
+  upcomingTrips: number;
+  occupancy: number;
+  averageRating: number;
+}
+
+export interface HostCarListDto {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  status: CarStatus;
+  vehicleTier?: VehicleTier;
+  dailyPriceUsd: number;
+  averageRating: number;
+  tripCount: number;
+  coverPhotoUrl?: string;
 }

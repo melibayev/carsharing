@@ -1,15 +1,26 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TriangleAlert } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useAuthStore } from '@/stores/auth-store';
-import { useUpdateProfile } from '@/hooks/use-auth';
+import { useUpdateProfile, useDeleteAccount } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { getInitials, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -25,8 +36,12 @@ type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const updateMutation = useUpdateProfile();
+  const deleteAccount = useDeleteAccount();
   const { toast } = useToast();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   const {
     register,
@@ -46,6 +61,21 @@ export default function ProfilePage() {
     updateMutation.mutate(data, {
       onSuccess: () => toast({ title: 'Profile updated!' }),
       onError: () => toast({ title: 'Update failed', variant: 'destructive' }),
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    deleteAccount.mutate(deletePassword, {
+      onSuccess: () => {
+        setShowDeleteDialog(false);
+        navigate('/', { replace: true });
+      },
+      onError: (err: unknown) => {
+        const detail =
+          (err as { response?: { data?: { title?: string } } })?.response?.data?.title ??
+          'Failed to delete account.';
+        toast({ title: detail, variant: 'destructive' });
+      },
     });
   };
 
@@ -137,6 +167,68 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Delete account</CardTitle>
+          <CardDescription>
+            Permanently remove your account, profile, and all associated data.
+          </CardDescription>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-4">
+          <Button
+            variant="outline"
+            className="border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+            onClick={() => { setDeletePassword(''); setShowDeleteDialog(true); }}
+          >
+            Delete account
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+              <TriangleAlert className="h-6 w-6 text-destructive" />
+            </div>
+            <DialogTitle className="text-center">Delete account?</DialogTitle>
+            <DialogDescription className="text-center">
+              This will permanently delete your account and all associated data.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-1">
+            <Label htmlFor="delete-password">Confirm your password</Label>
+            <Input
+              id="delete-password"
+              type="password"
+              placeholder="Enter your password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && deletePassword && handleDeleteAccount()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="flex-1" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              disabled={!deletePassword || deleteAccount.isPending}
+              onClick={handleDeleteAccount}
+            >
+              {deleteAccount.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Delete account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

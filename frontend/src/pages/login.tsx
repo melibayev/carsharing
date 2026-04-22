@@ -22,7 +22,7 @@ export default function LoginPage() {
   const location = useLocation();
   const loginMutation = useLogin();
   const [error, setError] = useState('');
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const {
     register,

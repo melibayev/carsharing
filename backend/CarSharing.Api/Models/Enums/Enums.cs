@@ -26,7 +26,8 @@ public enum FuelType
     Diesel,
     Hybrid,
     Electric,
-    PlugInHybrid
+    PlugInHybrid,
+    CNG
 }
 
 public enum CarStatus
@@ -63,6 +64,13 @@ public enum ReviewAuthorRole
     Host
 }
 
+public enum MessageType
+{
+    Text = 0,
+    Image = 1,
+    BookingCard = 2,
+}
+
 public enum NotificationType
 {
     BookingRequested,
@@ -77,7 +85,18 @@ public enum NotificationType
     PayoutProcessed,
     ListingApproved,
     ListingRejected,
-    General
+    General,
+    // Host-specific
+    HostOnboardingStepCompleted,
+    ListingSubmitted,
+    ListingMoreInfoNeeded,
+    NewBookingRequest,
+    BookingUpcoming24h,
+    GuestCheckedIn,
+    GuestCheckedOut,
+    HostPayoutFailed,
+    InsuranceExpiring,
+    TechnicalInspectionExpiring
 }
 
 public enum PayoutStatus
@@ -127,9 +146,60 @@ public enum DisputeCategory
 public enum ProfileCompletionStatus
 {
     Step1Done,
+    EmailVerified,   // email confirmed, wizard not yet continued
     Step2Done,
     Step3Done,
     Step4Done,
     Complete,
     Rejected
+}
+
+public enum IdentityDocumentType
+{
+    None,
+    Passport,
+    NationalId
+}
+
+public enum HostOnboardingStatus
+{
+    NotStarted,
+    IdentityConfirmed,
+    PayoutAdded,
+    AgreementSigned,
+    Complete
+}
+
+public enum PayoutMethodType
+{
+    UzcardCard,
+    HumoCard,
+    VisaMasterCard,
+    BankAccountUZS,
+    BankAccountUSD
+}
+
+public enum VehicleTier
+{
+    Economy,
+    Standard,
+    Premium,
+    Luxury
+}
+
+public enum OwnershipRelation
+{
+    RegisteredOwner,
+    LeasedFinanced,
+    CompanyVehicle
+}
+
+public enum CarDraftStep
+{
+    VehicleIdentity,
+    OwnershipDocs,
+    Photos,
+    LocationAvailability,
+    PricingRules,
+    ReviewSubmit
 }

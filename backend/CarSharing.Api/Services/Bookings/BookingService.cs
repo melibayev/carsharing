@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AutoMapper;
 using CarSharing.Api.Data;
 using CarSharing.Api.Models.Dtos;
@@ -7,6 +6,7 @@ using CarSharing.Api.Models.Enums;
 using CarSharing.Api.Services.Notifications;
 using CarSharing.Api.Services.Payments;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CarSharing.Api.Services.Bookings;
 
@@ -101,6 +101,32 @@ public class BookingService : IBookingService
         var conversation = new Conversation { BookingId = booking.Id };
         _db.Conversations.Add(conversation);
 
+        await _db.SaveChangesAsync();
+
+        // Look up System user for BookingCard message
+        var systemUserId = new Guid("00000000-0000-0000-0000-000000000001");
+
+        // Auto-send booking card as first message (system message)
+        _db.Messages.Add(new Message
+        {
+            ConversationId = conversation.Id,
+            SenderId = systemUserId,
+            Type = MessageType.BookingCard,
+            BookingId = booking.Id,
+            SentAt = DateTimeOffset.UtcNow
+        });
+
+        // Guest's optional intro message
+        if (!string.IsNullOrWhiteSpace(request.GuestMessage))
+        {
+            _db.Messages.Add(new Message
+            {
+                ConversationId = conversation.Id,
+                SenderId = guestId,
+                Body = request.GuestMessage,
+                SentAt = DateTimeOffset.UtcNow.AddMilliseconds(50)
+            });
+        }
         await _db.SaveChangesAsync();
 
         // Notify host

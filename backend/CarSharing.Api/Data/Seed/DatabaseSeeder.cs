@@ -43,6 +43,7 @@ public class DatabaseSeeder
 
         await SeedRolesAsync();
         await SeedFeaturesAsync();
+        await SeedSystemUserAsync();
         await SeedSpecialAccountsAsync();
         await SeedRegularUsersAsync();
         await SeedCarsAsync();
@@ -53,6 +54,7 @@ public class DatabaseSeeder
         await SeedKycVerificationsAsync();
         await SeedDisputesAsync();
         await SeedOnboardingUsersAsync();
+        await SeedHostUsersAsync();
 
         _logger.LogInformation("Database seeding completed. {UserCount} users, {CarCount} cars, {BookingCount} bookings.",
             _users.Count, _cars.Count, _bookings.Count);
@@ -65,6 +67,35 @@ public class DatabaseSeeder
             if (!await _roleManager.RoleExistsAsync(role))
                 await _roleManager.CreateAsync(new IdentityRole<Guid> { Name = role, NormalizedName = role.ToUpperInvariant() });
         }
+    }
+
+    private static readonly Guid SystemUserId = new Guid("00000000-0000-0000-0000-000000000001");
+
+    private async Task SeedSystemUserAsync()
+    {
+        if (await _db.Users.AnyAsync(u => u.Id == SystemUserId)) return;
+
+        var systemUser = new ApplicationUser
+        {
+            Id = SystemUserId,
+            UserName = "system@carsharing.internal",
+            NormalizedUserName = "SYSTEM@CARSHARING.INTERNAL",
+            Email = "system@carsharing.internal",
+            NormalizedEmail = "SYSTEM@CARSHARING.INTERNAL",
+            EmailConfirmed = true,
+            FirstName = "CarSharing",
+            LastName = "System",
+            IsSystemUser = true,
+            IsPhoneVerified = false,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            PasswordHash = "SYSTEM_ACCOUNT_NO_LOGIN",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            ConcurrencyStamp = Guid.NewGuid().ToString(),
+        };
+
+        _db.Users.Add(systemUser);
+        await _db.SaveChangesAsync();
     }
 
     private static readonly (string Name, string Slug, string? Icon)[] FeatureData = new (string, string, string?)[]
@@ -537,43 +568,93 @@ public class DatabaseSeeder
 
     private async Task SeedConversationsAsync()
     {
-        // Create conversations for recent bookings
-        var recentBookings = _bookings
-            .Where(b => b.Status == BookingStatus.Completed || b.Status == BookingStatus.Confirmed)
+        // Select bookings that involve the seeded guest/host accounts specifically
+        var guestUser = _users.First(u => u.Email == "guest@CarSharing.dev");
+        var hostUser  = _users.First(u => u.Email == "host@CarSharing.dev");
+
+        // Take last 25 bookings total — prioritize the seeded accounts
+        var guestBookings = _bookings
+            .Where(b => b.GuestId == guestUser.Id)
             .OrderByDescending(b => b.CreatedAt)
-            .Take(20)
+            .Take(8)
             .ToList();
 
-        foreach (var booking in recentBookings)
+        var hostBookings = _bookings
+            .Where(b => _cars.Any(c => c.Id == b.CarId && c.OwnerId == hostUser.Id))
+            .OrderByDescending(b => b.CreatedAt)
+            .Take(5)
+            .ToList();
+
+        var otherBookings = _bookings
+            .Except(guestBookings)
+            .Except(hostBookings)
+            .OrderByDescending(b => b.CreatedAt)
+            .Take(12)
+            .ToList();
+
+        var allBookings = guestBookings
+            .Concat(hostBookings)
+            .Concat(otherBookings)
+            .DistinctBy(b => b.Id)
+            .ToList();
+
+        var msgTime = DateTimeOffset.UtcNow.AddDays(-30);
+        var cardIdx = 0; // track how many have booking cards (we want ≥ 3)
+
+        foreach (var (booking, idx) in allBookings.Select((b, i) => (b, i)))
         {
             var car = _cars.First(c => c.Id == booking.CarId);
             var host = _users.First(u => u.Id == car.OwnerId);
             var guest = _users.First(u => u.Id == booking.GuestId);
 
+            var conversationTime = booking.CreatedAt.AddMinutes(5);
             var conversation = new Conversation
             {
                 BookingId = booking.Id,
-                CreatedAt = booking.CreatedAt.AddHours(1),
+                CreatedAt = conversationTime,
             };
 
-            // Add 2-4 messages
-            var msgCount = _rng.Next(2, 5);
-            var msgTime = conversation.CreatedAt;
+            var includeBookingCard = cardIdx < 5; // first 5 conversations get a booking card
+            var emptyConversation  = idx == allBookings.Count - 1; // last one stays empty
 
-            for (var m = 0; m < msgCount; m++)
+            if (!emptyConversation)
             {
-                msgTime = msgTime.AddMinutes(_rng.Next(5, 120));
-                var isGuestMsg = m % 2 == 0;
-                conversation.Messages.Add(new Message
+                var t = conversationTime;
+
+                // 1. BookingCard system message
+                if (includeBookingCard)
                 {
-                    SenderId = isGuestMsg ? guest.Id : host.Id,
-                    Body = isGuestMsg
-                        ? ConversationGuestMessages[_rng.Next(ConversationGuestMessages.Length)]
-                        : ConversationHostMessages[_rng.Next(ConversationHostMessages.Length)],
-                    SentAt = msgTime,
-                    ReadAt = msgTime.AddMinutes(_rng.Next(5, 60)),
-                    CreatedAt = msgTime,
-                });
+                    conversation.Messages.Add(new Message
+                    {
+                        SenderId  = SystemUserId,
+                        Type      = MessageType.BookingCard,
+                        BookingId = booking.Id,
+                        SentAt    = t,
+                        ReadAt    = t.AddMinutes(10),
+                        CreatedAt = t,
+                    });
+                    t = t.AddMinutes(5);
+                    cardIdx++;
+                }
+
+                // 2. Text messages back-and-forth
+                var msgCount = _rng.Next(2, 6);
+                for (var m = 0; m < msgCount; m++)
+                {
+                    t = t.AddMinutes(_rng.Next(5, 180));
+                    var isGuestMsg = m % 2 == 0;
+                    var isRead = t < DateTimeOffset.UtcNow.AddDays(-1) || _rng.NextDouble() > 0.35;
+                    conversation.Messages.Add(new Message
+                    {
+                        SenderId  = isGuestMsg ? guest.Id : host.Id,
+                        Body      = isGuestMsg
+                            ? ConversationGuestMessages[_rng.Next(ConversationGuestMessages.Length)]
+                            : ConversationHostMessages[_rng.Next(ConversationHostMessages.Length)],
+                        SentAt    = t,
+                        ReadAt    = isRead ? t.AddMinutes(_rng.Next(5, 90)) : null,
+                        CreatedAt = t,
+                    });
+                }
             }
 
             _db.Conversations.Add(conversation);
@@ -773,70 +854,333 @@ public class DatabaseSeeder
         await _userManager.AddToRoleAsync(s2a, "User");
         s2a.OnboardingStatus = ProfileCompletionStatus.Step2Done;
         s2a.MiddleName = "Michael";
-        s2a.AddressLine1 = "123 Main Street";
-        s2a.AddressCity = "Tashkent";
-        s2a.AddressRegion = "TSH";
-        s2a.AddressPostalCode = "100000";
+        s2a.HomeAddressLine = "123 Main Street";
+        s2a.HomeCity = "Tashkent";
+        s2a.HomeRegionId = "TSH";
+        s2a.HomePostalCode = "100000";
+        s2a.HomeLat = 41.2995m;
+        s2a.HomeLng = 69.2401m;
 
         var s2b = await CreateUserAsync("onboard.step2b@example.com", "Password1!", "Casey", "Brown", "Working on profile", true, false);
         await _userManager.AddToRoleAsync(s2b, "User");
         s2b.OnboardingStatus = ProfileCompletionStatus.Step2Done;
-        s2b.AddressLine1 = "456 Oak Avenue";
-        s2b.AddressCity = "Samarkand";
-        s2b.AddressRegion = "SAM";
-        s2b.AddressPostalCode = "140100";
+        s2b.HomeAddressLine = "456 Oak Avenue";
+        s2b.HomeCity = "Samarkand";
+        s2b.HomeRegionId = "SAM";
+        s2b.HomePostalCode = "140100";
+        s2b.HomeLat = 39.6542m;
+        s2b.HomeLng = 66.9597m;
 
-        // 3x Step3Done - uploaded license
+        // 3x Step3Done - uploaded license (DocumentsSubmitted)
         var s3a = await CreateUserAsync("onboard.step3a@example.com", "Password1!", "Riley", "Davis", "License uploaded", true, false);
         await _userManager.AddToRoleAsync(s3a, "User");
         s3a.OnboardingStatus = ProfileCompletionStatus.Step3Done;
         s3a.DriverLicenseNumber = "DL-001234";
         s3a.DriverLicenseExpiry = DateTimeOffset.UtcNow.AddYears(3);
-        s3a.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License";
+        s3a.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License+Front";
+        s3a.DriverLicenseBackUrl = "https://placehold.co/600x400/png?text=License+Back";
+        s3a.DriverLicenseSelfieUrl = "https://placehold.co/400x400/png?text=License+Selfie";
+        s3a.LicenseIssuedCountry = "UZ";
+        s3a.LicenseIssuedRegionId = "TSH";
 
         var s3b = await CreateUserAsync("onboard.step3b@example.com", "Password1!", "Morgan", "Wilson", "License done", true, false);
         await _userManager.AddToRoleAsync(s3b, "User");
         s3b.OnboardingStatus = ProfileCompletionStatus.Step3Done;
         s3b.DriverLicenseNumber = "DL-005678";
         s3b.DriverLicenseExpiry = DateTimeOffset.UtcNow.AddYears(2);
-        s3b.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License";
+        s3b.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License+Front";
+        s3b.DriverLicenseBackUrl = "https://placehold.co/600x400/png?text=License+Back";
+        s3b.DriverLicenseSelfieUrl = "https://placehold.co/400x400/png?text=License+Selfie";
+        s3b.LicenseIssuedCountry = "UZ";
+        s3b.LicenseIssuedRegionId = "SAM";
 
         var s3c = await CreateUserAsync("onboard.step3c@example.com", "Password1!", "Quinn", "Johnson", "License ready", true, false);
         await _userManager.AddToRoleAsync(s3c, "User");
         s3c.OnboardingStatus = ProfileCompletionStatus.Step3Done;
         s3c.DriverLicenseNumber = "DL-009012";
         s3c.DriverLicenseExpiry = DateTimeOffset.UtcNow.AddYears(4);
-        s3c.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License";
+        s3c.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=License+Front";
+        s3c.DriverLicenseBackUrl = "https://placehold.co/600x400/png?text=License+Back";
+        s3c.DriverLicenseSelfieUrl = "https://placehold.co/400x400/png?text=License+Selfie";
+        s3c.LicenseIssuedCountry = "UZ";
+        s3c.LicenseIssuedRegionId = "BUX";
 
-        // 2x Step4Done - uploaded ID
+        // 2x Step4Done - one with passport, one with national ID
         var s4a = await CreateUserAsync("onboard.step4a@example.com", "Password1!", "Avery", "Taylor", "ID verified", true, false);
         await _userManager.AddToRoleAsync(s4a, "User");
         s4a.OnboardingStatus = ProfileCompletionStatus.Step4Done;
-        s4a.NationalIdNumber = "AA1234567";
-        s4a.NationalIdFrontUrl = "https://placehold.co/600x400/png?text=ID+Front";
-        s4a.NationalIdBackUrl = "https://placehold.co/600x400/png?text=ID+Back";
-        s4a.SelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
+        s4a.IdentityDocumentType = IdentityDocumentType.Passport;
+        s4a.IdentityDocumentNumber = "AA1234567";
+        s4a.IdentityDocumentFrontUrl = "https://placehold.co/600x400/png?text=Passport+Front";
+        s4a.IdentitySelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
 
         var s4b = await CreateUserAsync("onboard.step4b@example.com", "Password1!", "Dakota", "Anderson", "Almost done", true, false);
         await _userManager.AddToRoleAsync(s4b, "User");
         s4b.OnboardingStatus = ProfileCompletionStatus.Step4Done;
-        s4b.NationalIdNumber = "AB7654321";
-        s4b.NationalIdFrontUrl = "https://placehold.co/600x400/png?text=ID+Front";
-        s4b.SelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
+        s4b.IdentityDocumentType = IdentityDocumentType.NationalId;
+        s4b.IdentityDocumentNumber = "AB7654321";
+        s4b.IdentityDocumentFrontUrl = "https://placehold.co/600x400/png?text=NatID+Front";
+        s4b.IdentityDocumentBackUrl = "https://placehold.co/600x400/png?text=NatID+Back";
+        s4b.IdentitySelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
 
         // 1x Complete - fully onboarded
         var comp = await CreateUserAsync("onboard.complete@example.com", "Password1!", "Sam", "Martinez", "Fully onboarded", true, true);
         await _userManager.AddToRoleAsync(comp, "User");
         comp.OnboardingStatus = ProfileCompletionStatus.Complete;
-        comp.PaymentMethodLast4 = "4242";
-        comp.PaymentMethodBrand = "Visa";
+        comp.CardLast4 = "4242";
+        comp.CardBrand = "Visa";
+        comp.CardholderName = "SAM MARTINEZ";
+        comp.PaymentMethodId = "seti_fake_seed_complete";
 
-        // 1x Rejected
+        // 1x Rejected - license was blurry
         var rej = await CreateUserAsync("onboard.rejected@example.com", "Password1!", "Jamie", "Clark", "Rejected submission", true, false);
         await _userManager.AddToRoleAsync(rej, "User");
         rej.OnboardingStatus = ProfileCompletionStatus.Rejected;
+        rej.DriverLicensePhotoUrl = "https://placehold.co/600x400/png?text=Blurry+License";
 
         await _db.SaveChangesAsync();
         _logger.LogInformation("Seeded {Count} onboarding users at various stages.", 11);
+
+        // Seed email-verification-specific users
+        await SeedEmailVerificationUsersAsync();
+    }
+
+    private async Task SeedEmailVerificationUsersAsync()
+    {
+        // User with a live, unconsumed verification code
+        var unverified = await CreateUserAsync(
+            "unverified@carsharing.dev", "Password1!", "Unverified", "User",
+            "Just registered, email not yet verified", false, false);
+        await _userManager.AddToRoleAsync(unverified, "User");
+        unverified.OnboardingStatus = ProfileCompletionStatus.Step1Done;
+        unverified.EmailConfirmed = false;
+
+        var knownCode = "123456";
+        var codeHashBytes = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(knownCode));
+        var codeHash = Convert.ToHexString(codeHashBytes).ToLowerInvariant();
+
+        _db.EmailVerificationCodes.Add(new EmailVerificationCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = unverified.Id,
+            CodeHash = codeHash,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+            CreatedAt = DateTimeOffset.UtcNow,
+            AttemptCount = 0
+        });
+
+        // User with a consumed (exhausted) verification code
+        var consumed = await CreateUserAsync(
+            "consumed-code@carsharing.dev", "Password1!", "Consumed", "Code",
+            "Exhausted all verify attempts", false, false);
+        await _userManager.AddToRoleAsync(consumed, "User");
+        consumed.OnboardingStatus = ProfileCompletionStatus.Step1Done;
+        consumed.EmailConfirmed = false;
+
+        _db.EmailVerificationCodes.Add(new EmailVerificationCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = consumed.Id,
+            CodeHash = codeHash,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+            CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-2),
+            ConsumedAt = DateTimeOffset.UtcNow.AddMinutes(-1),
+            AttemptCount = 5
+        });
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Seeded email verification test users.");
+    }
+
+    private async Task SeedHostUsersAsync()
+    {
+        // ── helpers ─────────────────────────────────────────────────────────
+        var faker = new Random(77);
+
+        async Task<ApplicationUser> MakeHostUser(string email, string pass, string first, string last, HostOnboardingStatus status, bool kycApproved)
+        {
+            var u = await CreateUserAsync(email, pass, first, last, string.Empty, true, kycApproved);
+            await _userManager.AddToRoleAsync(u, "User");
+            u.HostOnboardingStatus = status;
+            if (kycApproved)
+            {
+                u.IsIdentityVerified = true;
+                u.IdentityDocumentType = IdentityDocumentType.Passport;
+                u.IdentityDocumentNumber = $"AA{faker.Next(1000000, 9999999)}";
+                u.IdentityDocumentFrontUrl = "https://placehold.co/600x400/png?text=Passport";
+                u.IdentitySelfieUrl = "https://placehold.co/400x400/png?text=Selfie";
+            }
+            return u;
+        }
+
+        // 1. IdentityConfirmed – started host onboarding, identity confirmed only
+        var hIdent = await MakeHostUser("host.identity@example.com", "Password1!", "Nodir", "Yusupov", HostOnboardingStatus.IdentityConfirmed, true);
+
+        // 2. PayoutAdded – payout added, agreement not signed
+        var hPayout = await MakeHostUser("host.payout@example.com", "Password1!", "Murod", "Eshmatov", HostOnboardingStatus.PayoutAdded, true);
+        var pm1 = new PayoutMethod
+        {
+            UserId = hPayout.Id,
+            Type = PayoutMethodType.UzcardCard,
+            Brand = "Uzcard",
+            Last4 = "8877",
+            HolderName = "MUROD ESHMATOV",
+            IsDefault = true,
+            ProviderReference = "pm_fake_payout_seed_1",
+        };
+        _db.PayoutMethods.Add(pm1);
+        hPayout.HostPayoutMethodId = pm1.Id;
+
+        // 3. Complete but no cars – fully onboarded host, no listings yet
+        var hComplete = await MakeHostUser("host.complete@example.com", "Password1!", "Dilnoza", "Karimova", HostOnboardingStatus.Complete, true);
+        hComplete.HostAgreementSignedAt = DateTimeOffset.UtcNow.AddDays(-3);
+        hComplete.HostAgreementVersion = "1.0";
+        var pm2 = new PayoutMethod
+        {
+            UserId = hComplete.Id,
+            Type = PayoutMethodType.HumoCard,
+            Brand = "Humo",
+            Last4 = "4321",
+            HolderName = "DILNOZA KARIMOVA",
+            IsDefault = true,
+            ProviderReference = "pm_fake_payout_seed_2",
+        };
+        _db.PayoutMethods.Add(pm2);
+        hComplete.HostPayoutMethodId = pm2.Id;
+
+        // 4-7. Four full hosts with 1-3 listed cars each
+        var fullHosts = new[]
+        {
+            ("host.full1@example.com", "Akbar", "Toshmatov"),
+            ("host.full2@example.com", "Zulfiya", "Nazarova"),
+            ("host.full3@example.com", "Bobur", "Holiqov"),
+            ("host.full4@example.com", "Sarvinoz", "Mirzaeva"),
+        };
+
+        string[] makes = { "Cobalt", "Nexia", "Malibu", "Lacetti", "Damas" };
+        string[] models = { "1.5", "2", "LT", "SX", "Van" };
+        string[] colors = { "White", "Black", "Silver", "Blue", "Red" };
+        string[] cities = { "Tashkent", "Samarkand", "Bukhara", "Namangan" };
+        double[] lats = { 41.2995, 39.6547, 39.7747, 40.9983 };
+        double[] lngs = { 69.2401, 66.9758, 64.4286, 71.6726 };
+
+        var hostCarIdx = 0;
+        foreach (var (email, first, last) in fullHosts)
+        {
+            var h = await MakeHostUser(email, "Password1!", first, last, HostOnboardingStatus.Complete, true);
+            h.HostAgreementSignedAt = DateTimeOffset.UtcNow.AddDays(-faker.Next(5, 30));
+            h.HostAgreementVersion = "1.0";
+            var pmH = new PayoutMethod
+            {
+                UserId = h.Id,
+                Type = PayoutMethodType.VisaMasterCard,
+                Brand = "Visa",
+                Last4 = faker.Next(1000, 9999).ToString(),
+                HolderName = $"{first.ToUpperInvariant()} {last.ToUpperInvariant()}",
+                IsDefault = true,
+                ProviderReference = $"pm_fake_seed_{Guid.NewGuid():N}",
+            };
+            _db.PayoutMethods.Add(pmH);
+            h.HostPayoutMethodId = pmH.Id;
+
+            var carCount = faker.Next(1, 4);
+            for (var c = 0; c < carCount; c++)
+            {
+                var cityIdx = hostCarIdx % cities.Length;
+                var car = new Car
+                {
+                    OwnerId = h.Id,
+                    Make = makes[hostCarIdx % makes.Length],
+                    Model = models[hostCarIdx % models.Length],
+                    Year = faker.Next(2017, 2025),
+                    Color = colors[hostCarIdx % colors.Length],
+                    BodyType = BodyType.Sedan,
+                    Transmission = Transmission.Manual,
+                    FuelType = FuelType.Gasoline,
+                    Seats = faker.Next(4, 6),
+                    Doors = 4,
+                    DailyPriceUsd = faker.Next(15, 60),
+                    City = cities[cityIdx],
+                    Country = "UZ",
+                    Location = new Point(lngs[cityIdx] + (faker.NextDouble() - 0.5) * 0.1,
+                                         lats[cityIdx] + (faker.NextDouble() - 0.5) * 0.1) { SRID = 4326 },
+                    Status = CarStatus.Listed,
+                    VehicleTier = VehicleTier.Economy,
+                    OwnershipRelation = OwnershipRelation.RegisteredOwner,
+                    PrivacyRadiusMeters = 300,
+                    InsuranceExpiry = DateTimeOffset.UtcNow.AddYears(1),
+                    TechnicalInspectionExpiry = DateTimeOffset.UtcNow.AddMonths(8),
+                };
+                _db.Cars.Add(car);
+                _cars.Add(car);
+                hostCarIdx++;
+            }
+        }
+
+        // 3 drafts at various wizard steps
+        var draftHost = hComplete;
+        _db.CarDrafts.Add(new CarDraft
+        {
+            UserId = draftHost.Id,
+            CurrentStep = CarDraftStep.VehicleIdentity,
+            Make = "Cobalt",
+            Model = "1.5",
+            Year = 2021,
+            Vin = "KNAGM4A77F5339901",
+            PlateNumber = "01A777AA",
+        });
+
+        var draftHost2 = hIdent;
+        _db.CarDrafts.Add(new CarDraft
+        {
+            UserId = draftHost2.Id,
+            CurrentStep = CarDraftStep.Photos,
+            Make = "Lacetti",
+            Model = "SX",
+            Year = 2019,
+            Vin = "KLATF08Y1VB363636",
+            PlateNumber = "30A123BB",
+            InsurancePolicyUrl = "https://placehold.co/600x800/png?text=Insurance",
+            InsuranceExpiry = DateTimeOffset.UtcNow.AddYears(1),
+            TechPassportFrontUrl = "https://placehold.co/600x800/png?text=TechPassport+Front",
+            TechPassportBackUrl = "https://placehold.co/600x800/png?text=TechPassport+Back",
+        });
+
+        _db.CarDrafts.Add(new CarDraft
+        {
+            UserId = hPayout.Id,
+            CurrentStep = CarDraftStep.PricingRules,
+            Make = "Nexia",
+            Model = "2",
+            Year = 2020,
+            Vin = "WAUZZZ8K9BA123001",
+            PlateNumber = "10B456CC",
+            PhotosJson = "[\"https://placehold.co/800x600/png?text=Car+1\",\"https://placehold.co/800x600/png?text=Car+2\"]",
+            City = "Tashkent",
+            Lat = 41.2995m,
+            Lng = 69.2401m,
+        });
+
+        // 5 PendingApproval cars (various scenarios)
+        var pendingHost = hComplete;
+        var pendingCars = new[]
+        {
+            new Car { OwnerId = pendingHost.Id, Make = "Lexus", Model = "RX 350", Year = 2022, Status = CarStatus.PendingApproval, VehicleTier = VehicleTier.Luxury, GpsTrackerInstalled = true, RequiresManualReview = true, City = "Tashkent", Country = "UZ", Vin = "2T2ZZMCA1NC000001", DailyPriceUsd = 120, Seats = 5, Doors = 4, Transmission = Transmission.Automatic, FuelType = FuelType.Gasoline, BodyType = BodyType.SUV, OwnershipRelation = OwnershipRelation.RegisteredOwner, InsuranceExpiry = DateTimeOffset.UtcNow.AddYears(1), Location = new Point(69.24, 41.30) { SRID = 4326 } },
+            new Car { OwnerId = hIdent.Id, Make = "Toyota", Model = "Camry", Year = 2021, Status = CarStatus.PendingApproval, VehicleTier = VehicleTier.Premium, VinMismatchFlagged = true, RequiresManualReview = true, City = "Samarkand", Country = "UZ", Vin = "4T1BF1FK2CU123456", DailyPriceUsd = 60, Seats = 5, Doors = 4, Transmission = Transmission.Automatic, FuelType = FuelType.Gasoline, BodyType = BodyType.Sedan, OwnershipRelation = OwnershipRelation.RegisteredOwner, InsuranceExpiry = DateTimeOffset.UtcNow.AddDays(20), Location = new Point(66.97, 39.65) { SRID = 4326 } },
+            new Car { OwnerId = hPayout.Id, Make = "Chevrolet", Model = "Malibu", Year = 2022, Status = CarStatus.PendingApproval, VehicleTier = VehicleTier.Standard, RequiresManualReview = false, City = "Bukhara", Country = "UZ", Vin = "1G1ZD5ST2JF123789", DailyPriceUsd = 45, Seats = 5, Doors = 4, Transmission = Transmission.Automatic, FuelType = FuelType.Gasoline, BodyType = BodyType.Sedan, OwnershipRelation = OwnershipRelation.RegisteredOwner, InsuranceExpiry = DateTimeOffset.UtcNow.AddYears(1), Location = new Point(64.43, 39.77) { SRID = 4326 } },
+            new Car { OwnerId = pendingHost.Id, Make = "Kia", Model = "K5", Year = 2023, Status = CarStatus.PendingApproval, VehicleTier = VehicleTier.Standard, RequiresManualReview = true, City = "Tashkent", Country = "UZ", Vin = "5XXGT4L3XJG123000", DailyPriceUsd = 55, Seats = 5, Doors = 4, Transmission = Transmission.Automatic, FuelType = FuelType.Gasoline, BodyType = BodyType.Sedan, OwnershipRelation = OwnershipRelation.RegisteredOwner, InsuranceExpiry = DateTimeOffset.UtcNow.AddYears(2), Location = new Point(69.25, 41.31) { SRID = 4326 } },
+            new Car { OwnerId = hIdent.Id, Make = "Hyundai", Model = "Sonata", Year = 2020, Status = CarStatus.PendingApproval, VehicleTier = VehicleTier.Economy, RequiresManualReview = false, City = "Namangan", Country = "UZ", Vin = "5NPE24AF1GH123999", DailyPriceUsd = 35, Seats = 5, Doors = 4, Transmission = Transmission.Automatic, FuelType = FuelType.Gasoline, BodyType = BodyType.Sedan, OwnershipRelation = OwnershipRelation.RegisteredOwner, InsuranceExpiry = DateTimeOffset.UtcNow.AddMonths(6), Location = new Point(71.67, 40.99) { SRID = 4326 } },
+        };
+
+        foreach (var pc in pendingCars)
+        {
+            _db.Cars.Add(pc);
+            _cars.Add(pc);
+        }
+
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Seeded host-phase test users and listings.");
     }
 }

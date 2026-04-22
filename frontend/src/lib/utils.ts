@@ -48,6 +48,26 @@ export function getInitials(firstName: string, lastName?: string): string {
   return `${firstName.charAt(0)}${lastName?.charAt(0) ?? ''}`.toUpperCase();
 }
 
+const AVATAR_PALETTE = [
+  'bg-red-500 text-white',
+  'bg-orange-500 text-white',
+  'bg-amber-500 text-white',
+  'bg-lime-600 text-white',
+  'bg-teal-500 text-white',
+  'bg-cyan-600 text-white',
+  'bg-blue-500 text-white',
+  'bg-violet-500 text-white',
+  'bg-pink-500 text-white',
+  'bg-rose-500 text-white',
+];
+
+export function getAvatarColor(name: string): string {
+  if (!name) return 'bg-muted text-muted-foreground';
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length]!;
+}
+
 /** Format phone for display: +998 90 123 45 67 */
 export function formatPhoneUz(phone: string): string {
   const digits = phone.replace(/\D/g, '');

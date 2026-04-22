@@ -8,4 +8,6 @@ public interface IMessageService
     Task<List<MessageDto>> GetMessagesAsync(Guid bookingId, Guid userId, DateTimeOffset? before = null);
     Task<MessageDto> SendMessageAsync(Guid bookingId, Guid senderId, string body);
     Task MarkAsReadAsync(Guid conversationId, Guid userId);
+    Task MarkConversationReadByBookingAsync(Guid bookingId, Guid userId);
+    Task<int> GetTotalUnreadCountAsync(Guid userId);
 }

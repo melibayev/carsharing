@@ -36,10 +36,10 @@
     --success: 142 72% 37%;
     --warning: 38 92% 50%;
     --danger: 0 72% 51%;
-    /* Admin sidebar */
-    --sidebar-bg: 222 47% 6%;
-    --sidebar-fg: 210 40% 96%;
-    --sidebar-border: 222 30% 16%;
+    /* Admin sidebar — light mode */
+    --sidebar-bg: 225 20% 97%;
+    --sidebar-fg: 220 50% 7%;
+    --sidebar-border: 224 14% 91%;
     --sidebar-accent: 19 80% 55%;
   }
 

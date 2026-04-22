@@ -150,6 +150,13 @@ const config: Config = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%': { transform: 'translateX(-4px)' },
+          '40%': { transform: 'translateX(4px)' },
+          '60%': { transform: 'translateX(-2px)' },
+          '80%': { transform: 'translateX(2px)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -161,6 +168,7 @@ const config: Config = {
         'scale-in': 'scale-in 0.2s ease-out',
         'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
+        'shake': 'shake 0.24s ease-in-out',
       },
       transitionDuration: {
         '250': '250ms',

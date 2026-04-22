@@ -27,17 +27,41 @@ public class ApplicationUser : IdentityUser<Guid>
 
     // Onboarding fields
     public ProfileCompletionStatus? OnboardingStatus { get; set; }
+    public bool Step4Skipped { get; set; }
     public string? MiddleName { get; set; }
-    public string? AddressLine1 { get; set; }
-    public string? AddressCity { get; set; }
-    public string? AddressRegion { get; set; }
-    public string? AddressPostalCode { get; set; }
-    public string? NationalIdNumber { get; set; }
-    public string? NationalIdFrontUrl { get; set; }
-    public string? NationalIdBackUrl { get; set; }
-    public string? SelfieUrl { get; set; }
-    public string? PaymentMethodLast4 { get; set; }
-    public string? PaymentMethodBrand { get; set; }
+    public string? Gender { get; set; }
+    public string? HomeAddressLine { get; set; }
+    public string? HomeCity { get; set; }
+    public string? HomeRegionId { get; set; }
+    public string? HomePostalCode { get; set; }
+    public decimal? HomeLat { get; set; }
+    public decimal? HomeLng { get; set; }
+    public string? LicenseIssuedCountry { get; set; }
+    public string? LicenseIssuedRegionId { get; set; }
+    public string? DriverLicenseBackUrl { get; set; }
+    public string? DriverLicenseSelfieUrl { get; set; }
+    public IdentityDocumentType IdentityDocumentType { get; set; }
+    public string? IdentityDocumentNumber { get; set; }
+    public string? IdentityDocumentFrontUrl { get; set; }
+    public string? IdentityDocumentBackUrl { get; set; }
+    public string? IdentitySelfieUrl { get; set; }
+    public string? PaymentMethodId { get; set; }
+    public string? CardLast4 { get; set; }
+    public string? CardBrand { get; set; }
+    public string? CardholderName { get; set; }
+    public string? BillingAddressJson { get; set; }
+    public DateTimeOffset? ReminderSentAt { get; set; }
+
+    // Host onboarding fields
+    public HostOnboardingStatus HostOnboardingStatus { get; set; } = HostOnboardingStatus.NotStarted;
+    public DateTimeOffset? HostAgreementSignedAt { get; set; }
+    public string? HostAgreementVersion { get; set; }
+    public Guid? HostPayoutMethodId { get; set; }
+    public int FraudRiskScore { get; set; }
+    public bool IsOnFraudWatchlist { get; set; }
+    public bool IsBanned { get; set; }
+    public bool IsSystemUser { get; set; }
+    public DateTimeOffset? HostOnboardingReminderSentAt { get; set; }
 
     public string FullName => $"{FirstName} {LastName}";
 
@@ -52,4 +76,7 @@ public class ApplicationUser : IdentityUser<Guid>
     public ICollection<PayoutRecord> Payouts { get; set; } = new List<PayoutRecord>();
     public ICollection<KycVerification> KycVerifications { get; set; } = new List<KycVerification>();
     public ICollection<Dispute> FiledDisputes { get; set; } = new List<Dispute>();
+    public ICollection<PayoutMethod> PayoutMethods { get; set; } = new List<PayoutMethod>();
+    public ICollection<CarDraft> CarDrafts { get; set; } = new List<CarDraft>();
+    public PayoutMethod? HostPayoutMethod { get; set; }
 }

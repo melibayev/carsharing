@@ -42,4 +42,11 @@ public class FakePaymentService : IPaymentService
         _logger.LogInformation("[FakePayment] Payout {Amount:C} to host {HostId}: {Id}", amount, hostId, id);
         return Task.FromResult(id);
     }
+
+    public Task<string> AttachPayoutMethodAsync(Guid userId, string type, string tokenizedDetails)
+    {
+        var id = $"pm_fake_{Guid.NewGuid():N}";
+        _logger.LogInformation("[FakePayment] Attached payout method {Type} for user {UserId}: {Id}", type, userId, id);
+        return Task.FromResult(id);
+    }
 }

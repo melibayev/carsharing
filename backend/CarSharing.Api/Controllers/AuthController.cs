@@ -12,17 +12,24 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IRefreshTokenService _refreshTokenService;
+    private readonly IEmailVerificationService _emailVerificationService;
 
-    public AuthController(IAuthService authService, IRefreshTokenService refreshTokenService)
+    public AuthController(
+        IAuthService authService,
+        IRefreshTokenService refreshTokenService,
+        IEmailVerificationService emailVerificationService)
     {
         _authService = authService;
         _refreshTokenService = refreshTokenService;
+        _emailVerificationService = emailVerificationService;
     }
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
     {
-        var result = await _authService.RegisterAsync(request);
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ua = Request.Headers.UserAgent.ToString();
+        var result = await _authService.RegisterAsync(request, ip, ua);
         var (rawToken, _) = await _refreshTokenService.GenerateRefreshTokenAsync(
             result.User.Id);
         SetRefreshCookie(rawToken);
@@ -90,6 +97,59 @@ public class AuthController : ControllerBase
     {
         // In production: validate token and confirm email
         return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("email/send-code")]
+    public async Task<IActionResult> SendVerificationCode()
+    {
+        var userId = GetUserId();
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ua = Request.Headers.UserAgent.ToString();
+        try
+        {
+            var user = await _authService.GetCurrentUserAsync(userId);
+            var devCode = await _emailVerificationService.IssueAndSendAsync(userId, user.Email, user.FirstName, ip, ua);
+            return Ok(new { expiresInSeconds = 600, devCode });
+        }
+        catch (RateLimitException ex)
+        {
+            Response.Headers["Retry-After"] = ex.RetryAfterSeconds?.ToString() ?? "60";
+            return StatusCode(429, new ProblemDetails { Title = "Too many requests. Please wait before requesting a new code." });
+        }
+    }
+
+    [Authorize]
+    [HttpPost("email/verify-code")]
+    public async Task<IActionResult> VerifyEmailCode([FromBody] VerifyEmailCodeRequest request)
+    {
+        var userId = GetUserId();
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var result = await _emailVerificationService.VerifyCodeAsync(userId, request.Code, ip);
+        if (result.Success)
+            return NoContent();
+
+        return BadRequest(new ProblemDetails
+        {
+            Title = result.FailureReason switch
+            {
+                EmailVerifyFailureReason.WrongCode => $"Incorrect code.{(result.AttemptsRemaining.HasValue ? $" {result.AttemptsRemaining} attempts remaining." : "")}",
+                EmailVerifyFailureReason.Expired => "Code has expired. Please request a new one.",
+                EmailVerifyFailureReason.Consumed => "Code has already been used.",
+                EmailVerifyFailureReason.RateLimited => "Too many attempts. Please wait and try again.",
+                EmailVerifyFailureReason.NoLiveCode => "No active verification code. Please request a new one.",
+                _ => "Verification failed."
+            }
+        });
+    }
+
+    [Authorize]
+    [HttpGet("email/status")]
+    public async Task<ActionResult<EmailVerifyStatusDto>> GetEmailVerificationStatus()
+    {
+        var userId = GetUserId();
+        var status = await _emailVerificationService.GetStatusAsync(userId);
+        return Ok(status);
     }
 
     [Authorize]

@@ -2,6 +2,7 @@ using CarSharing.Api.Data;
 using CarSharing.Api.Data.Seed;
 using CarSharing.Api.Middleware;
 using CarSharing.Api.Services.Background;
+using CarSharing.Api.Services.Host;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,6 +69,11 @@ public static class WebApplicationExtensions
 
         RecurringJob.AddOrUpdate<ReviewReminderJob>(
             "review-reminders",
+            job => job.ExecuteAsync(),
+            Cron.Daily);
+
+        RecurringJob.AddOrUpdate<HostOnboardingReminderJob>(
+            "host-onboarding-reminders",
             job => job.ExecuteAsync(),
             Cron.Daily);
     }
