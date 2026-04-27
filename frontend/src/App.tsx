@@ -38,6 +38,11 @@ const AdminDisputes = lazy(() => import('@/pages/admin/disputes'));
 const AdminFinance = lazy(() => import('@/pages/admin/finance'));
 const AdminAudit = lazy(() => import('@/pages/admin/audit'));
 
+const CheckoutPage = lazy(() => import('@/pages/checkout'));
+const BookingSuccessPage = lazy(() => import('@/pages/booking-success'));
+const WalletPage = lazy(() => import('@/pages/wallet'));
+const PaymentMethodsPage = lazy(() => import('@/pages/payment-methods'));
+
 function Spinner() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
@@ -67,6 +72,10 @@ export default function App() {
           <Route element={<AuthGuard />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="bookings/:id" element={<BookingDetail />} />
+            <Route path="bookings/:id/checkout" element={<CheckoutPage />} />
+            <Route path="bookings/:id/success" element={<BookingSuccessPage />} />
+            <Route path="wallet" element={<WalletPage />} />
+            <Route path="profile/payment-methods" element={<PaymentMethodsPage />} />
             <Route path="messages" element={<Messages />} />
             <Route path="messages/:conversationId" element={<Messages />} />
             <Route path="notifications" element={<Notifications />} />

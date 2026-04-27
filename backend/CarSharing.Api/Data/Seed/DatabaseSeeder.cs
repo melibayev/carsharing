@@ -36,6 +36,7 @@ public class DatabaseSeeder
         if (await _db.Users.AnyAsync())
         {
             _logger.LogInformation("Database already seeded. Skipping.");
+            await SeedPaymentsAsync();
             return;
         }
 
@@ -55,6 +56,7 @@ public class DatabaseSeeder
         await SeedDisputesAsync();
         await SeedOnboardingUsersAsync();
         await SeedHostUsersAsync();
+        await SeedPaymentsAsync();
 
         _logger.LogInformation("Database seeding completed. {UserCount} users, {CarCount} cars, {BookingCount} bookings.",
             _users.Count, _cars.Count, _bookings.Count);
@@ -1182,5 +1184,106 @@ public class DatabaseSeeder
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Seeded host-phase test users and listings.");
+    }
+
+    private async Task SeedPaymentsAsync()
+    {
+        var guest = _users.FirstOrDefault(u => u.Email == "guest@CarSharing.dev")
+            ?? await _db.Users.FirstOrDefaultAsync(u => u.Email == "guest@CarSharing.dev");
+        if (guest is null) return;
+
+        // ── Guest balance ────────────────────────────────────────────────────
+        var guestBalance = await _db.AccountBalances.FirstOrDefaultAsync(b => b.UserId == guest.Id);
+        if (guestBalance is null)
+        {
+            guestBalance = new AccountBalance
+            {
+                UserId = guest.Id,
+                AvailableUzs = 5_000_000m,
+                LockedUzs = 350_000m,
+                Version = 0,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+            _db.AccountBalances.Add(guestBalance);
+            await _db.SaveChangesAsync();
+        }
+
+        // ── Ledger history for guest (12 entries, 90 days) ───────────────────
+        if (!await _db.LedgerEntries.AnyAsync(e => e.UserId == guest.Id))
+        {
+            var ledgerEntries = new[]
+            {
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Credit, Type = LedgerEntryType.TopUp,          AmountUzs = 2_000_000m, BalanceAfterUzs = 2_000_000m, Description = "Wallet top-up",            CreatedAt = DateTimeOffset.UtcNow.AddDays(-90) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Debit,  Type = LedgerEntryType.BookingCapture,  AmountUzs =   180_000m, BalanceAfterUzs = 1_820_000m, Description = "Booking payment",           CreatedAt = DateTimeOffset.UtcNow.AddDays(-85) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Credit, Type = LedgerEntryType.TopUp,          AmountUzs = 1_000_000m, BalanceAfterUzs = 2_820_000m, Description = "Wallet top-up",            CreatedAt = DateTimeOffset.UtcNow.AddDays(-70) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Debit,  Type = LedgerEntryType.BookingCapture,  AmountUzs =   350_000m, BalanceAfterUzs = 2_470_000m, Description = "Booking payment",           CreatedAt = DateTimeOffset.UtcNow.AddDays(-60) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Credit, Type = LedgerEntryType.RefundCredit,   AmountUzs =   350_000m, BalanceAfterUzs = 2_820_000m, Description = "Booking refund",            CreatedAt = DateTimeOffset.UtcNow.AddDays(-58) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Credit, Type = LedgerEntryType.TopUp,          AmountUzs = 1_500_000m, BalanceAfterUzs = 4_320_000m, Description = "Wallet top-up",            CreatedAt = DateTimeOffset.UtcNow.AddDays(-45) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Debit,  Type = LedgerEntryType.BookingCapture,  AmountUzs =   420_000m, BalanceAfterUzs = 3_900_000m, Description = "Booking payment",           CreatedAt = DateTimeOffset.UtcNow.AddDays(-40) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Credit, Type = LedgerEntryType.TopUp,          AmountUzs = 2_000_000m, BalanceAfterUzs = 5_900_000m, Description = "Wallet top-up",            CreatedAt = DateTimeOffset.UtcNow.AddDays(-30) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Debit,  Type = LedgerEntryType.BookingCapture,  AmountUzs =   280_000m, BalanceAfterUzs = 5_620_000m, Description = "Booking payment",           CreatedAt = DateTimeOffset.UtcNow.AddDays(-20) },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Debit,  Type = LedgerEntryType.BookingHold,    AmountUzs =   350_000m, BalanceAfterUzs = 5_270_000m, Description = "Funds locked for booking",  CreatedAt = DateTimeOffset.UtcNow.AddDays(-5)  },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Debit,  Type = LedgerEntryType.AdjustmentDebit, AmountUzs =    20_000m, BalanceAfterUzs = 5_250_000m, Description = "Service adjustment",        CreatedAt = DateTimeOffset.UtcNow.AddDays(-3)  },
+                new LedgerEntry { UserId = guest.Id, AccountBalanceId = guestBalance.Id, Direction = LedgerDirection.Credit, Type = LedgerEntryType.TopUp,          AmountUzs =   100_000m, BalanceAfterUzs = 5_350_000m, Description = "Wallet top-up",            CreatedAt = DateTimeOffset.UtcNow.AddDays(-1)  },
+            };
+            _db.LedgerEntries.AddRange(ledgerEntries);
+        }
+
+        // ── Guest payment cards ───────────────────────────────────────────────
+        if (!await _db.UserPaymentMethods.AnyAsync(m => m.UserId == guest.Id))
+        {
+            _db.UserPaymentMethods.AddRange(
+                new UserPaymentMethod
+                {
+                    UserId = guest.Id,
+                    Type = PaymentMethodType.VisaMasterCard,
+                    Brand = "Visa",
+                    Last4 = "4242",
+                    ExpMonth = 12,
+                    ExpYear = DateTimeOffset.UtcNow.Year + 2,
+                    CardholderName = "AZIZA RAHIMOVA",
+                    ProviderToken = "pm_fake_visa_seed_1",
+                    IsDefault = true,
+                    IsActive = true,
+                    PhoneVerifiedAt = DateTimeOffset.UtcNow.AddDays(-30),
+                    CreatedAt = DateTimeOffset.UtcNow.AddDays(-30)
+                },
+                new UserPaymentMethod
+                {
+                    UserId = guest.Id,
+                    Type = PaymentMethodType.UzcardCard,
+                    Brand = "Uzcard",
+                    Last4 = "8888",
+                    ExpMonth = 6,
+                    ExpYear = DateTimeOffset.UtcNow.Year + 3,
+                    CardholderName = "AZIZA RAHIMOVA",
+                    ProviderToken = "pm_fake_uzcard_seed_2",
+                    IsDefault = false,
+                    IsActive = true,
+                    PhoneVerifiedAt = DateTimeOffset.UtcNow.AddDays(-10),
+                    CreatedAt = DateTimeOffset.UtcNow.AddDays(-10)
+                });
+        }
+
+        // ── Zero-balance user ─────────────────────────────────────────────────
+        var zeroUser = _users.FirstOrDefault(u => u.Email != "guest@CarSharing.dev"
+            && u.Email != "admin@CarSharing.dev"
+            && u.Email?.StartsWith("host") != true)
+            ?? await _db.Users.FirstOrDefaultAsync(u => u.Email != "guest@CarSharing.dev"
+                && u.Email != "admin@CarSharing.dev"
+                && !u.Email!.StartsWith("host"));
+        if (zeroUser is not null && !await _db.AccountBalances.AnyAsync(b => b.UserId == zeroUser.Id))
+        {
+            _db.AccountBalances.Add(new AccountBalance
+            {
+                UserId = zeroUser.Id,
+                AvailableUzs = 0m,
+                LockedUzs = 0m,
+                Version = 0,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+        }
+
+        await _db.SaveChangesAsync();
     }
 }

@@ -343,3 +343,174 @@ public class EmailVerificationCodeConfiguration : IEntityTypeConfiguration<Email
         builder.HasIndex(e => new { e.UserId, e.ConsumedAt });
     }
 }
+
+// === Payment System Configurations ===
+
+public class AccountBalanceConfiguration : IEntityTypeConfiguration<AccountBalance>
+{
+    public void Configure(EntityTypeBuilder<AccountBalance> builder)
+    {
+        builder.HasKey(b => b.Id);
+        builder.Property(b => b.AvailableUzs).HasColumnType("decimal(18,2)");
+        builder.Property(b => b.LockedUzs).HasColumnType("decimal(18,2)");
+        builder.Property(b => b.Version).IsConcurrencyToken();
+
+        builder.HasOne(b => b.User)
+            .WithMany()
+            .HasForeignKey(b => b.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(b => b.UserId).IsUnique();
+    }
+}
+
+public class LedgerEntryConfiguration : IEntityTypeConfiguration<LedgerEntry>
+{
+    public void Configure(EntityTypeBuilder<LedgerEntry> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.AmountUzs).HasColumnType("decimal(18,2)");
+        builder.Property(e => e.BalanceAfterUzs).HasColumnType("decimal(18,2)");
+        builder.Property(e => e.Description).HasMaxLength(200).IsRequired();
+
+        builder.HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(e => e.RelatedBooking)
+            .WithMany()
+            .HasForeignKey(e => e.RelatedBookingId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(e => e.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(e => e.AccountBalance)
+            .WithMany(b => b.LedgerEntries)
+            .HasForeignKey(e => e.AccountBalanceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(e => new { e.UserId, e.CreatedAt });
+        builder.HasIndex(e => e.RelatedBookingId);
+    }
+}
+
+public class UserPaymentMethodConfiguration : IEntityTypeConfiguration<UserPaymentMethod>
+{
+    public void Configure(EntityTypeBuilder<UserPaymentMethod> builder)
+    {
+        builder.HasKey(m => m.Id);
+        builder.Property(m => m.Brand).HasMaxLength(50).IsRequired();
+        builder.Property(m => m.Last4).HasMaxLength(4).IsRequired();
+        builder.Property(m => m.CardholderName).HasMaxLength(200).IsRequired();
+        builder.Property(m => m.ProviderToken).HasMaxLength(500).IsRequired();
+
+        builder.HasOne(m => m.User)
+            .WithMany()
+            .HasForeignKey(m => m.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(m => new { m.UserId, m.DeletedAt });
+        builder.HasQueryFilter(m => m.DeletedAt == null);
+    }
+}
+
+public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
+{
+    public void Configure(EntityTypeBuilder<Payment> builder)
+    {
+        builder.HasKey(p => p.Id);
+        builder.Property(p => p.AmountUzs).HasColumnType("decimal(18,2)");
+        builder.Property(p => p.RefundedAmountUzs).HasColumnType("decimal(18,2)");
+        builder.Property(p => p.ProviderRef).HasMaxLength(200);
+        builder.Property(p => p.FailureReason).HasMaxLength(500);
+        builder.Property(p => p.IdempotencyKey).HasMaxLength(200);
+
+        builder.HasOne(p => p.Booking)
+            .WithOne(b => b.Payment)
+            .HasForeignKey<Payment>(p => p.BookingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.PaymentMethodRef)
+            .WithMany(m => m.Payments)
+            .HasForeignKey(p => p.PaymentMethodId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(p => p.BookingId).IsUnique();
+        builder.HasIndex(p => p.IdempotencyKey).IsUnique().HasFilter("\"IdempotencyKey\" IS NOT NULL");
+        builder.HasIndex(p => p.Status);
+    }
+}
+
+public class PaymentSmsChallengeConfiguration : IEntityTypeConfiguration<PaymentSmsChallenge>
+{
+    public void Configure(EntityTypeBuilder<PaymentSmsChallenge> builder)
+    {
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.PurposeKey).HasMaxLength(200).IsRequired();
+        builder.Property(c => c.CodeHash).HasMaxLength(64).IsRequired();
+        builder.Property(c => c.IpAddress).HasMaxLength(45);
+        builder.Property(c => c.UserAgent).HasMaxLength(500);
+
+        builder.HasOne(c => c.User)
+            .WithMany()
+            .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(c => new { c.UserId, c.PurposeKey, c.ConsumedAt });
+    }
+}
+
+public class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
+{
+    public void Configure(EntityTypeBuilder<Receipt> builder)
+    {
+        builder.HasKey(r => r.Id);
+        builder.Property(r => r.ReceiptNumber).HasMaxLength(50).IsRequired();
+        builder.Property(r => r.PdfUrl).HasMaxLength(500);
+        builder.Property(r => r.TotalUzs).HasColumnType("decimal(18,2)");
+
+        builder.HasOne(r => r.Booking)
+            .WithOne(b => b.Receipt)
+            .HasForeignKey<Receipt>(r => r.BookingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(r => r.Payment)
+            .WithOne(p => p.Receipt)
+            .HasForeignKey<Receipt>(r => r.PaymentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(r => r.BookingId).IsUnique();
+        builder.HasIndex(r => r.ReceiptNumber).IsUnique();
+    }
+}
+
+public class TopUpIntentConfiguration : IEntityTypeConfiguration<TopUpIntent>
+{
+    public void Configure(EntityTypeBuilder<TopUpIntent> builder)
+    {
+        builder.HasKey(t => t.Id);
+        builder.Property(t => t.AmountUzs).HasColumnType("decimal(18,2)");
+
+        builder.HasOne(t => t.User)
+            .WithMany()
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(t => t.PaymentMethod)
+            .WithMany()
+            .HasForeignKey(t => t.PaymentMethodId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(t => new { t.UserId, t.CreatedAt });
+    }
+}
+

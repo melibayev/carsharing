@@ -856,3 +856,118 @@ export interface HostCarListDto {
   tripCount: number;
   coverPhotoUrl?: string;
 }
+
+// === Payment System ===
+
+export interface AccountBalanceDto {
+  availableUzs: number;
+  lockedUzs: number;
+  totalUzs: number;
+  updatedAt: string;
+}
+
+export interface LedgerEntryDto {
+  id: string;
+  direction: 'Credit' | 'Debit';
+  type: string;
+  amountUzs: number;
+  balanceAfterUzs: number;
+  description: string;
+  relatedBookingId: string | null;
+  createdAt: string;
+}
+
+export interface TopUpIntentRequest {
+  amountUzs: number;
+  paymentMethodId?: string;
+}
+
+export interface TopUpIntentResponse {
+  intentId: string;
+  amountUzs: number;
+  phoneHint: string;
+}
+
+export interface ConfirmTopUpRequest {
+  intentId: string;
+  code: string;
+}
+
+export interface UserPaymentMethodDto {
+  id: string;
+  type: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  cardholderName: string;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  phoneVerifiedAt: string | null;
+}
+
+export interface AddCardIntentRequest {
+  cardNumber: string;
+  expMonth: number;
+  expYear: number;
+  cvv: string;
+  cardholderName: string;
+}
+
+export interface AddCardIntentResponse {
+  paymentMethodId: string;
+  maskedCard: string;
+  phoneHint: string;
+}
+
+export interface ConfirmCardRequest {
+  paymentMethodId: string;
+  code: string;
+}
+
+export interface ResendCardSmsRequest {
+  paymentMethodId: string;
+}
+
+export interface PriceBreakdownDto {
+  dailyRateUzs: number;
+  days: number;
+  subtotalUzs: number;
+  cleaningFeeUzs: number;
+  serviceFeeUzs: number;
+  taxesUzs: number;
+  totalUzs: number;
+}
+
+export interface CheckoutDto {
+  booking: BookingDto;
+  priceBreakdown: PriceBreakdownDto;
+  balance: AccountBalanceDto;
+  paymentMethods: UserPaymentMethodDto[];
+  recommendedMethodId: string | null;
+  lockExpiresAt: string;
+}
+
+export interface PayBookingRequest {
+  method: 'AccountBalance' | 'Card';
+  paymentMethodId?: string;
+}
+
+export interface PayBookingResponse {
+  paymentId: string;
+  status: string;
+  bookingStatus: string;
+}
+
+export interface ReceiptDto {
+  id: string;
+  receiptNumber: string;
+  bookingId: string;
+  paymentId: string;
+  totalUzs: number;
+  generatedAt: string;
+  emailedAt: string | null;
+  pdfUrl: string | null;
+}
+

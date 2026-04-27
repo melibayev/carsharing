@@ -622,3 +622,143 @@ public record OnboardingStep5Request(
 public record DocumentUploadResponse(string Url);
 
 public record EmailAvailableResponse(bool Available);
+
+// === Payment System DTOs ===
+
+// Balance
+public class AccountBalanceDto
+{
+    public decimal AvailableUzs { get; set; }
+    public decimal LockedUzs { get; set; }
+    public uint Version { get; set; }
+}
+
+public class LedgerEntryDto
+{
+    public Guid Id { get; set; }
+    public string Direction { get; set; } = "";  // "Credit" | "Debit"
+    public string Type { get; set; } = "";
+    public decimal AmountUzs { get; set; }
+    public decimal BalanceAfterUzs { get; set; }
+    public string Description { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public Guid? RelatedBookingId { get; set; }
+}
+
+public record TopUpIntentRequest(decimal AmountUzs, Guid? PaymentMethodId);
+
+public class TopUpIntentResponse
+{
+    public Guid IntentId { get; set; }
+    public bool SmsRequired { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTimeOffset? NextResendAllowedAt { get; set; }
+}
+
+public record ConfirmTopUpRequest(Guid IntentId, string SmsCode);
+
+// Payment Methods
+public class UserPaymentMethodDto
+{
+    public Guid Id { get; set; }
+    public string Type { get; set; } = "";
+    public string Brand { get; set; } = "";
+    public string Last4 { get; set; } = "";
+    public int ExpMonth { get; set; }
+    public int ExpYear { get; set; }
+    public string CardholderName { get; set; } = "";
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? PhoneVerifiedAt { get; set; }
+}
+
+public record AddCardIntentRequest(
+    string Type,         // "VisaMasterCard" | "UzcardCard" | "HumoCard"
+    string CardNumber,
+    int ExpMonth,
+    int ExpYear,
+    string Cvv,
+    string CardholderName);
+
+public class AddCardIntentResponse
+{
+    public Guid PendingId { get; set; }
+    public string Last4 { get; set; } = "";
+    public string Brand { get; set; } = "";
+    public DateTimeOffset SmsExpiresAt { get; set; }
+    public DateTimeOffset? NextResendAllowedAt { get; set; }
+}
+
+public record ConfirmCardRequest(Guid PendingId, string SmsCode);
+public record ResendCardSmsRequest(Guid PendingId);
+
+// Checkout
+public class CheckoutDto
+{
+    public BookingDto Booking { get; set; } = null!;
+    public PriceBreakdownDto PriceBreakdown { get; set; } = null!;
+    public AccountBalanceDto Balance { get; set; } = null!;
+    public List<UserPaymentMethodDto> PaymentMethods { get; set; } = new();
+    public Guid? RecommendedMethodId { get; set; }
+    public DateTimeOffset LockExpiresAt { get; set; }
+}
+
+public class PriceBreakdownDto
+{
+    public decimal DailyRateUzs { get; set; }
+    public int Days { get; set; }
+    public decimal SubtotalUzs { get; set; }
+    public decimal? DiscountAmountUzs { get; set; }
+    public string? DiscountType { get; set; }
+    public decimal CleaningFeeUzs { get; set; }
+    public decimal ServiceFeeUzs { get; set; }
+    public decimal TaxesUzs { get; set; }
+    public decimal TotalUzs { get; set; }
+}
+
+public record PayBookingRequest(string Method, Guid? PaymentMethodId);
+
+public class PayBookingResponse
+{
+    public Guid PaymentId { get; set; }
+    public string Status { get; set; } = "";
+    public string BookingStatus { get; set; } = "";
+}
+
+// Receipts
+public class ReceiptDto
+{
+    public Guid Id { get; set; }
+    public Guid BookingId { get; set; }
+    public Guid PaymentId { get; set; }
+    public string ReceiptNumber { get; set; } = "";
+    public string? PdfUrl { get; set; }
+    public DateTimeOffset? EmailedAt { get; set; }
+    public decimal TotalUzs { get; set; }
+    public DateTimeOffset GeneratedAt { get; set; }
+    public string PaymentMethod { get; set; } = "";
+    public string? CardLast4 { get; set; }
+    public string? CardBrand { get; set; }
+}
+
+// Payments (admin)
+public class PaymentDto
+{
+    public Guid Id { get; set; }
+    public Guid BookingId { get; set; }
+    public string CarTitle { get; set; } = "";
+    public string GuestName { get; set; } = "";
+    public string Method { get; set; } = "";
+    public string? CardLast4 { get; set; }
+    public string? CardBrand { get; set; }
+    public decimal AmountUzs { get; set; }
+    public string Status { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? AuthorizedAt { get; set; }
+    public DateTimeOffset? CapturedAt { get; set; }
+    public decimal RefundedAmountUzs { get; set; }
+}
+
+public record AdminRefundRequest(decimal AmountUzs, string Reason);
+public record AdminBalanceAdjustmentRequest(Guid UserId, decimal AmountUzs, string Direction, string Reason);

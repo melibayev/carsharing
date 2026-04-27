@@ -96,7 +96,69 @@ public enum NotificationType
     GuestCheckedOut,
     HostPayoutFailed,
     InsuranceExpiring,
-    TechnicalInspectionExpiring
+    TechnicalInspectionExpiring,
+    // Payment-specific
+    PaymentSucceeded,
+    PaymentFailed,
+    BalanceCredited,
+    BalanceDebited,
+    RefundIssued,
+    CardAdded
+}
+
+// === Payment Enums ===
+
+public enum PaymentMethodType
+{
+    VisaMasterCard,
+    UzcardCard,
+    HumoCard,
+    Payme,
+    Click,
+    BankAccount
+}
+
+public enum PaymentMethodBrand
+{
+    Visa,
+    Mastercard,
+    Uzcard,
+    Humo,
+    Unknown
+}
+
+public enum PaymentStatus
+{
+    Pending,
+    Authorized,
+    Captured,
+    Failed,
+    Refunded,
+    PartiallyRefunded
+}
+
+public enum PaymentMethod
+{
+    AccountBalance,
+    Card
+}
+
+public enum LedgerDirection
+{
+    Credit,
+    Debit
+}
+
+public enum LedgerEntryType
+{
+    TopUp,
+    BookingHold,
+    BookingHoldRelease,
+    BookingCapture,
+    RefundCredit,
+    PayoutDebit,
+    AdjustmentCredit,
+    AdjustmentDebit
 }
 
 public enum PayoutStatus

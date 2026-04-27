@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using CarSharing.Api.Models.Dtos;
 using CarSharing.Api.Services.Bookings;
+using CarSharing.Api.Services.Payments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +12,12 @@ namespace CarSharing.Api.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookingService;
+    private readonly ICheckoutService _checkout;
 
-    public BookingsController(IBookingService bookingService)
+    public BookingsController(IBookingService bookingService, ICheckoutService checkout)
     {
         _bookingService = bookingService;
+        _checkout = checkout;
     }
 
     [HttpPost("quote")]
@@ -107,6 +110,26 @@ public class BookingsController : ControllerBase
         var userId = GetUserId();
         var booking = await _bookingService.DisputeAsync(id, userId, request.Reason);
         return Ok(booking);
+    }
+
+    [Authorize]
+    [HttpGet("{id:guid}/checkout")]
+    public async Task<ActionResult<CheckoutDto>> GetCheckout(Guid id, CancellationToken ct)
+    {
+        var userId = GetUserId();
+        var dto = await _checkout.GetCheckoutAsync(id, userId, ct);
+        return Ok(dto);
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/pay")]
+    public async Task<ActionResult<PayBookingResponse>> Pay(
+        Guid id, [FromBody] PayBookingRequest request, CancellationToken ct)
+    {
+        var userId = GetUserId();
+        var idempotencyKey = Request.Headers.TryGetValue("Idempotency-Key", out var key) ? key.ToString() : null;
+        var result = await _checkout.PayAsync(id, userId, request, idempotencyKey, ct);
+        return Ok(result);
     }
 
     private Guid GetUserId()

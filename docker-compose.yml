@@ -59,6 +59,11 @@ services:
       App__SeedOnStartup: ${SEED_ON_STARTUP:-true}
       App__AutoApproveCarsInDev: ${AUTO_APPROVE_CARS_IN_DEV:-true}
       App__CorsOrigins: ${CORS_ORIGINS:-http://localhost:3000}
+      Twilio__Enabled: ${TWILIO_ENABLED:-false}
+      Twilio__AccountSid: ${TWILIO_ACCOUNT_SID:-}
+      Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
+      Twilio__FromPhone: ${TWILIO_FROM_PHONE:-}
+      Sms__DevLogPath: /app/dev-sms.log
     depends_on:
       postgres:
         condition: service_healthy

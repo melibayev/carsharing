@@ -13,6 +13,7 @@ using CarSharing.Api.Services.Geocoding;
 using CarSharing.Api.Services.Messaging;
 using CarSharing.Api.Services.Notifications;
 using CarSharing.Api.Services.Payments;
+using CarSharing.Api.Services.Sms;
 using CarSharing.Api.Services.Reviews;
 using CarSharing.Api.Services.Uploads;
 using CarSharing.Api.Services.Audit;
@@ -196,6 +197,20 @@ public static class ServiceCollectionExtensions
 
         // Payments — Replace with StripePaymentService when going live.
         services.AddScoped<IPaymentService, FakePaymentService>();
+
+        // SMS
+        var twilioEnabled = config.GetValue<bool>("Twilio:Enabled");
+        if (twilioEnabled)
+            services.AddScoped<ISmsService, TwilioSmsService>();
+        else
+            services.AddScoped<ISmsService, LocalSmsService>();
+
+        // Payment system
+        services.AddScoped<IPaymentSmsService, PaymentSmsService>();
+        services.AddScoped<IBalanceService, BalanceService>();
+        services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+        services.AddScoped<ICheckoutService, CheckoutService>();
+        services.AddScoped<IReceiptService, ReceiptService>();
 
         // Verification / KYC
         services.AddScoped<IKycService, KycService>();

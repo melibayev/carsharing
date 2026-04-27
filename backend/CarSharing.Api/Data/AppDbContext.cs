@@ -29,6 +29,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
     public DbSet<CarDraft> CarDrafts => Set<CarDraft>();
     public DbSet<CarDraftDocument> CarDraftDocuments => Set<CarDraftDocument>();
     public DbSet<EmailVerificationCode> EmailVerificationCodes => Set<EmailVerificationCode>();
+    public DbSet<AccountBalance> AccountBalances => Set<AccountBalance>();
+    public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
+    public DbSet<UserPaymentMethod> UserPaymentMethods => Set<UserPaymentMethod>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<PaymentSmsChallenge> PaymentSmsChallenges => Set<PaymentSmsChallenge>();
+    public DbSet<Receipt> Receipts => Set<Receipt>();
+    public DbSet<TopUpIntent> TopUpIntents => Set<TopUpIntent>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

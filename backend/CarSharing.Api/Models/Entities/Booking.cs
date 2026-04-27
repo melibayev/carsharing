@@ -45,4 +45,9 @@ public class Booking : AuditableEntity
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public Availability? AvailabilityBlock { get; set; }
     public ICollection<Dispute> Disputes { get; set; } = new List<Dispute>();
+    public Payment? Payment { get; set; }
+    public Receipt? Receipt { get; set; }
+
+    /// <summary>10-minute date hold lock — expires after checkout session.</summary>
+    public DateTimeOffset? CheckoutLockExpiresAt { get; set; }
 }
