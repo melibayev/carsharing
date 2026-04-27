@@ -51,9 +51,14 @@ public class MappingProfile : Profile
             .ForMember(d => d.AuthorPhotoUrl, o => o.MapFrom(s => s.Author.ProfilePhotoUrl));
 
         CreateMap<Conversation, ConversationDto>()
-            .ForMember(d => d.CarTitle, o => o.MapFrom(s => $"{s.Booking.Car.Year} {s.Booking.Car.Make} {s.Booking.Car.Model}"))
+            .ForMember(d => d.CarTitle, o => o.MapFrom(s =>
+                s.Booking != null && s.Booking.Car != null
+                    ? $"{s.Booking.Car.Year} {s.Booking.Car.Make} {s.Booking.Car.Model}"
+                    : null))
             .ForMember(d => d.CoverPhotoUrl, o => o.MapFrom(s =>
-                s.Booking.Car.Photos.Where(p => p.IsCover).Select(p => p.Url).FirstOrDefault()))
+                s.Booking != null && s.Booking.Car != null
+                    ? s.Booking.Car.Photos.Where(p => p.IsCover).Select(p => p.Url).FirstOrDefault()
+                    : null))
             .ForMember(d => d.OtherParty, o => o.Ignore())
             .ForMember(d => d.LastMessage, o => o.Ignore())
             .ForMember(d => d.UnreadCount, o => o.Ignore());

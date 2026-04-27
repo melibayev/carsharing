@@ -68,3 +68,16 @@ export function useUnreadMessageCount() {
     refetchInterval: 15000,
   });
 }
+
+/** Get or create the admin support conversation for the current user. */
+export function useGetOrCreateSupportConversation(enabled: boolean) {
+  return useQuery({
+    queryKey: ['support-conversation'],
+    queryFn: async () => {
+      const res = await api.get<import('@/types').ConversationDto>('/support/conversation');
+      return res.data;
+    },
+    enabled,
+    staleTime: 30000,
+  });
+}

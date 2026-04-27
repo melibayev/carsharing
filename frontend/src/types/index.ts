@@ -347,8 +347,8 @@ export interface ReviewDto {
 // === Message ===
 export interface ConversationDto {
   id: string;
-  bookingId: string;
-  carTitle: string;
+  bookingId: string | null;  // null for direct/support conversations
+  carTitle: string | null;   // null for direct conversations
   carCity: string;
   seats: number;
   fuelType: string;

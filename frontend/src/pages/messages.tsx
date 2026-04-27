@@ -211,8 +211,14 @@ function ConversationItem({
         </div>
 
         <div className="flex items-center gap-1 mt-0.5">
-          <Car className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground truncate">{conv.carTitle}</span>
+          {conv.carTitle ? (
+            <>
+              <Car className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground truncate">{conv.carTitle}</span>
+            </>
+          ) : (
+            <span className="text-xs text-muted-foreground">Direct message</span>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-2 mt-1">
@@ -362,9 +368,11 @@ export default function MessagesPage() {
     if (conversationId) setSelectedBookingId(conversationId);
   }, [conversationId]);
 
-  function openConversation(bookingId: string) {
-    setSelectedBookingId(bookingId);
-    navigate(`/messages/${bookingId}`, { replace: true });
+  function openConversation(conv: ConversationDto) {
+    // For support/direct conversations, use conv.id because there's no bookingId
+    const routeId = conv.bookingId ?? conv.id;
+    setSelectedBookingId(routeId);
+    navigate(`/messages/${routeId}`, { replace: true });
   }
 
   const handleSend = useCallback((e?: React.FormEvent) => {
@@ -440,8 +448,8 @@ export default function MessagesPage() {
                 <ConversationItem
                   key={conv.id}
                   conv={conv}
-                  isActive={selectedBookingId === conv.bookingId}
-                  onClick={() => openConversation(conv.bookingId)}
+                  isActive={selectedBookingId === (conv.bookingId ?? conv.id)}
+                  onClick={() => openConversation(conv)}
                   index={i}
                 />
               ))}
@@ -500,11 +508,18 @@ export default function MessagesPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                  <Car className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{selectedConv.carTitle}</span>
+                  {selectedConv.carTitle ? (
+                    <>
+                      <Car className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{selectedConv.carTitle}</span>
+                    </>
+                  ) : (
+                    <span>Direct message</span>
+                  )}
                 </div>
               </div>
 
+              {selectedConv.bookingId && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -514,6 +529,7 @@ export default function MessagesPage() {
                 <Calendar className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">View booking</span>
               </Button>
+              )}
             </div>
 
             {/* Messages area */}

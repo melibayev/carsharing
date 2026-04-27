@@ -4,8 +4,16 @@ namespace CarSharing.Api.Models.Entities;
 
 public class Conversation : AuditableEntity
 {
-    public Guid BookingId { get; set; }
-    public Booking Booking { get; set; } = null!;
+    // Booking-based conversation (null for direct/support conversations)
+    public Guid? BookingId { get; set; }
+    public Booking? Booking { get; set; }
+
+    // Direct (support) conversations: participants instead of a booking
+    public Guid? Participant1Id { get; set; }
+    public ApplicationUser? Participant1 { get; set; }
+    public Guid? Participant2Id { get; set; }
+    public ApplicationUser? Participant2 { get; set; }
+
     public ICollection<Message> Messages { get; set; } = new List<Message>();
 }
 

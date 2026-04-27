@@ -146,8 +146,16 @@ public class ConversationConfiguration : IEntityTypeConfiguration<Conversation>
 {
     public void Configure(EntityTypeBuilder<Conversation> builder)
     {
-        builder.HasOne(c => c.Booking).WithOne(b => b.Conversation).HasForeignKey<Conversation>(c => c.BookingId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasIndex(c => c.BookingId).IsUnique();
+        builder.HasOne(c => c.Booking).WithOne(b => b.Conversation)
+            .HasForeignKey<Conversation>(c => c.BookingId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(c => c.BookingId).IsUnique(false);
+        builder.HasOne(c => c.Participant1).WithMany()
+            .HasForeignKey(c => c.Participant1Id).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(c => c.Participant2).WithMany()
+            .HasForeignKey(c => c.Participant2Id).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(c => new { c.Participant1Id, c.Participant2Id });
     }
 }
 

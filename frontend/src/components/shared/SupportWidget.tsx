@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Headphones, X, Mail, Phone, MessageCircle, HelpCircle, ChevronRight, Shield } from 'lucide-react';
+import { Headphones, X, Mail, Phone, MessageCircle, HelpCircle, ChevronRight, Shield, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNavigate } from 'react-router-dom';
+import api from '@/lib/api';
 
 const FAQ = [
   { q: 'How do I book a car?', a: 'Search for a car, pick dates, then click "Request to book" or "Book now".' },
@@ -18,11 +19,27 @@ const PANEL_ANCHOR = 'fixed bottom-36 right-5 md:bottom-24 md:right-8 z-[9998]';
 export default function SupportWidget() {
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
   const navigate = useNavigate();
 
-  const handleClose = () => {
-    setOpen(false);
+  const handleClose = () => { setOpen(false); };
+
+  const handleChatWithSupport = async () => {
+    if (!isAuthenticated) return;
+    setChatLoading(true);
+    try {
+      const res = await api.get<{ id: string; bookingId: string | null }>('/support/conversation');
+      const id = res.data.bookingId ?? res.data.id;
+      setOpen(false);
+      navigate(`/messages/${id}`);
+    } catch {
+      // fallback: just open messages list
+      setOpen(false);
+      navigate('/messages');
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   return (
@@ -99,15 +116,16 @@ export default function SupportWidget() {
 
                   {isAuthenticated ? (
                     <button
-                      onClick={() => { navigate('/messages'); setOpen(false); }}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border hover:bg-muted/50 transition-colors group"
+                      onClick={handleChatWithSupport}
+                      disabled={chatLoading}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border hover:bg-muted/50 transition-colors group disabled:opacity-60"
                     >
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Shield className="h-4 w-4 text-primary" />
+                        {chatLoading ? <Loader2 className="h-4 w-4 text-primary animate-spin" /> : <Shield className="h-4 w-4 text-primary" />}
                       </div>
                       <div className="flex-1 text-left">
                         <p className="text-sm font-medium">Chat with support</p>
-                        <p className="text-xs text-muted-foreground">Open your messages — admin is there</p>
+                        <p className="text-xs text-muted-foreground">Opens your direct conversation with admin</p>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                     </button>

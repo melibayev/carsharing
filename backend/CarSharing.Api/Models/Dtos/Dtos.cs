@@ -241,8 +241,8 @@ public class ReviewDto
 public class ConversationDto
 {
     public Guid Id { get; set; }
-    public Guid BookingId { get; set; }
-    public string CarTitle { get; set; } = "";
+    public Guid? BookingId { get; set; }  // null for direct/support conversations
+    public string? CarTitle { get; set; }  // null for direct conversations
     public string? CoverPhotoUrl { get; set; }
     public UserPublicDto? OtherParty { get; set; }
     public MessageDto? LastMessage { get; set; }

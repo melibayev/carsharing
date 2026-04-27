@@ -60,6 +60,15 @@ public class MessagesController : ControllerBase
         return Ok(count);
     }
 
+    /// <summary>Gets or creates a direct support conversation with the admin.</summary>
+    [HttpGet("support/conversation")]
+    public async Task<ActionResult<ConversationDto>> GetSupportConversation()
+    {
+        var userId = GetUserId();
+        var conv = await _messageService.GetOrCreateSupportConversationAsync(userId);
+        return Ok(conv);
+    }
+
     private Guid GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
