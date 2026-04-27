@@ -117,7 +117,7 @@ export default function VerifyEmailPage() {
   const email = user?.email ?? '';
 
   return (
-    <OnboardingLayout showBack={false} showSaveExit={false}>
+    <OnboardingLayout showBack={false} showSaveExit={false} hideSteps={true}>
       <div className="flex flex-col items-center text-center max-w-md mx-auto py-8 gap-6">
         <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
           <MailCheck className="w-10 h-10 text-neutral-600 dark:text-neutral-300" />

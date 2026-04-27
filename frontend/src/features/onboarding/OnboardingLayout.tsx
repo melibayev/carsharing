@@ -22,6 +22,7 @@ interface OnboardingLayoutProps {
   continueLabel?: string;
   showBack?: boolean;
   showSaveExit?: boolean;
+  hideSteps?: boolean;
 }
 
 export default function OnboardingLayout({
@@ -32,6 +33,7 @@ export default function OnboardingLayout({
   continueLabel,
   showBack = true,
   showSaveExit = true,
+  hideSteps = false,
 }: OnboardingLayoutProps) {
   const { currentStep, lastCompletedStep } = useOnboardingStore();
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ export default function OnboardingLayout({
       </div>
 
       {/* Mobile stepper */}
-      <div className="sm:hidden border-b bg-card px-4 py-3 space-y-2">
+      <div className={`sm:hidden border-b bg-card px-4 py-3 space-y-2 ${hideSteps ? 'hidden' : ''}`}>
         <button
           onClick={() => setMobileStepperOpen(!mobileStepperOpen)}
           className="flex items-center justify-between w-full text-sm"
@@ -107,7 +109,7 @@ export default function OnboardingLayout({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left rail (desktop) */}
-        <aside className="hidden sm:flex w-64 border-r bg-card p-6 flex-col gap-6 shrink-0">
+        <aside className={`hidden ${hideSteps ? '' : 'sm:flex'} w-64 border-r bg-card p-6 flex-col gap-6 shrink-0`}>
           <nav className="space-y-1">
             {steps.map((step, idx) => {
               const isCompleted = step.id <= lastCompletedStep;
@@ -165,7 +167,7 @@ export default function OnboardingLayout({
             </Button>
           )}
         </div>
-        <span className="hidden md:block text-sm text-muted-foreground">
+        <span className={`hidden md:block text-sm text-muted-foreground ${hideSteps ? 'invisible' : ''}`}>
           Step {currentStep} of 6
         </span>
         <div>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star, MapPin, Calendar, Shield, Fuel, Cog, Users, Zap,
-  ChevronLeft, ChevronRight, Car, Grid2x2, X, ArrowLeft,
+  ChevronLeft, ChevronRight, Car, Grid2x2, X, ArrowLeft, ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,7 @@ export default function CarDetailPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [guestMessage, setGuestMessage] = useState('');
+  const [showVerifyBanner, setShowVerifyBanner] = useState(false);
 
   const quoteParams = car && startDate && endDate
     ? { carId: car.id, startUtc: new Date(startDate).toISOString(), endUtc: new Date(endDate).toISOString() }
@@ -54,11 +55,7 @@ export default function CarDetailPage() {
       return;
     }
     if (!user?.isIdentityVerified) {
-      navigate('/onboarding?step=3', { state: { from: { pathname: `/cars/${id}` } } });
-      toast({
-        title: 'Identity verification required',
-        description: 'Please complete identity verification before booking a car.',
-      });
+      setShowVerifyBanner(true);
       return;
     }
     if (!car || !startDate || !endDate) return;
@@ -611,6 +608,37 @@ export default function CarDetailPage() {
                 <p className="text-xs text-center text-muted-foreground">
                   Min {car.minTripDays} day{car.minTripDays !== 1 ? 's' : ''} · Max {car.maxTripDays} days
                 </p>
+
+                {/* Identity verification banner */}
+                <AnimatePresence>
+                  {showVerifyBanner && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25 }}
+                      className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4 space-y-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Identity verification required</p>
+                          <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                            You need to verify your identity before booking a car. It only takes a few minutes.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full rounded-xl"
+                        size="sm"
+                        onClick={() => navigate('/onboarding?step=3')}
+                      >
+                        <ShieldCheck className="h-4 w-4 mr-1.5" />
+                        Verify my identity
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
