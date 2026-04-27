@@ -5,7 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format a number as UZS: "500,000 UZS" */
+/** Backend stores prices in USD internally. 1 USD = 12,800 UZS (fixed rate). */
+export const USD_TO_UZS = 12800;
+
+/** Convert a USD amount (as stored in the DB) to UZS for display. */
+export function usdToUzs(usd: number): number {
+  return Math.round(usd * USD_TO_UZS);
+}
+
+/** Format a UZS amount: "1,000,000 UZS" */
 export function formatUzs(amount: number): string {
   return (
     new Intl.NumberFormat('en-US', {
@@ -13,6 +21,11 @@ export function formatUzs(amount: number): string {
       maximumFractionDigits: 0,
     }).format(amount) + ' UZS'
   );
+}
+
+/** Format a USD DB value as UZS display string. Use this for all *Usd fields from the API. */
+export function formatUsd(usd: number): string {
+  return formatUzs(usdToUzs(usd));
 }
 
 export function formatCurrency(amount: number): string {

@@ -18,7 +18,7 @@ import { useCarDetail } from '@/hooks/use-cars';
 import { useQuote, useCreateBooking } from '@/hooks/use-bookings';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProfile } from '@/hooks/use-auth';
-import { formatUzs, formatDate, getInitials } from '@/lib/utils';
+import { formatUsd, formatDate, getInitials } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Transmission, FuelType } from '@/types';
 import YandexMapView from '@/components/shared/YandexMapView';
@@ -44,11 +44,22 @@ export default function CarDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Minimum selectable start date = now + advanceNoticeHours (default 24h)
+  const minStartDate = (() => {
+    const d = new Date();
+    d.setHours(d.getHours() + (car?.advanceNoticeHours ?? 24) + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  // Convert a date-picker value ("YYYY-MM-DD") to a UTC ISO string
+  // Use noon local time to safely clear the 24h advance-notice window
+  const toUtc = (dateStr: string) => new Date(dateStr + 'T12:00:00').toISOString();
   const [guestMessage, setGuestMessage] = useState('');
   const [showVerifyBanner, setShowVerifyBanner] = useState(false);
 
   const quoteParams = car && startDate && endDate
-    ? { carId: car.id, startUtc: new Date(startDate).toISOString(), endUtc: new Date(endDate).toISOString() }
+    ? { carId: car.id, startUtc: toUtc(startDate), endUtc: toUtc(endDate) }
     : null;
   const { data: quote, isLoading: quoteLoading } = useQuote(quoteParams);
   const bookingMutation = useCreateBooking();
@@ -66,8 +77,8 @@ export default function CarDetailPage() {
     bookingMutation.mutate(
       {
         carId: car.id,
-        startUtc: new Date(startDate).toISOString(),
-        endUtc: new Date(endDate).toISOString(),
+        startUtc: toUtc(startDate),
+        endUtc: toUtc(endDate),
         guestMessage: guestMessage || undefined,
       },
       {
@@ -477,7 +488,7 @@ export default function CarDetailPage() {
               <div className="px-6 pt-6 pb-5 border-b bg-gradient-to-br from-primary/5 to-transparent">
                 <div className="flex items-baseline gap-2">
                   <span className="text-[2.4rem] font-bold font-mono leading-none tracking-tight">
-                    {formatUzs(car.dailyPriceUsd)}
+                    {formatUsd(car.dailyPriceUsd)}
                   </span>
                   <span className="text-muted-foreground font-normal">/ day</span>
                 </div>
@@ -504,7 +515,7 @@ export default function CarDetailPage() {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={minStartDate}
                       className="border-0 p-0 h-auto text-sm font-semibold focus-visible:ring-0 bg-transparent shadow-none"
                     />
                   </div>
@@ -516,7 +527,7 @@ export default function CarDetailPage() {
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      min={startDate || new Date().toISOString().split('T')[0]}
+                      min={startDate || minStartDate}
                       className="border-0 p-0 h-auto text-sm font-semibold focus-visible:ring-0 bg-transparent shadow-none"
                     />
                   </div>
@@ -543,35 +554,35 @@ export default function CarDetailPage() {
                     >
                       <div className="rounded-xl bg-muted/40 px-4 py-3.5 space-y-2 text-sm">
                         <div className="flex justify-between text-muted-foreground">
-                          <span>{formatUzs(quote.dailyRateUsd)} × {quote.days} day{quote.days !== 1 ? 's' : ''}</span>
-                          <span className="font-mono tabular-nums">{formatUzs(quote.subtotalUsd)}</span>
+                          <span>{formatUsd(quote.dailyRateUsd)} × {quote.days} day{quote.days !== 1 ? 's' : ''}</span>
+                          <span className="font-mono tabular-nums">{formatUsd(quote.subtotalUsd)}</span>
                         </div>
                         {quote.discountAmount != null && quote.discountAmount > 0 && (
                           <div className="flex justify-between text-green-600">
                             <span>Discount</span>
-                            <span className="font-mono tabular-nums">−{formatUzs(quote.discountAmount)}</span>
+                            <span className="font-mono tabular-nums">−{formatUsd(quote.discountAmount)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-muted-foreground">
                           <span>Cleaning fee</span>
-                          <span className="font-mono tabular-nums">{formatUzs(quote.cleaningFeeUsd)}</span>
+                          <span className="font-mono tabular-nums">{formatUsd(quote.cleaningFeeUsd)}</span>
                         </div>
                         <div className="flex justify-between text-muted-foreground">
                           <span>Service fee</span>
-                          <span className="font-mono tabular-nums">{formatUzs(quote.serviceFeeUsd)}</span>
+                          <span className="font-mono tabular-nums">{formatUsd(quote.serviceFeeUsd)}</span>
                         </div>
                         <div className="flex justify-between text-muted-foreground">
                           <span>Tax</span>
-                          <span className="font-mono tabular-nums">{formatUzs(quote.taxesUsd)}</span>
+                          <span className="font-mono tabular-nums">{formatUsd(quote.taxesUsd)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between font-bold text-base">
                           <span>Total</span>
-                          <span className="font-mono tabular-nums">{formatUzs(quote.totalChargedUsd)}</span>
+                          <span className="font-mono tabular-nums">{formatUsd(quote.totalChargedUsd)}</span>
                         </div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
                           <Shield className="h-3.5 w-3.5 shrink-0" />
-                          {formatUzs(quote.securityDepositHoldUsd)} refundable deposit
+                          {formatUsd(quote.securityDepositHoldUsd)} refundable deposit
                         </p>
                       </div>
                     </motion.div>

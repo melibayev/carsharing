@@ -25,6 +25,7 @@ import {
   UserPlus,
   Sparkles,
 } from 'lucide-react';
+import { CarsAroundMe } from '@/components/home/CarsAroundMe';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -274,6 +275,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* SECTION 4B: CARS AROUND ME */}
+      <CarsAroundMe />
 
       {/* SECTION 5: POPULAR REGIONS */}
       <section className="container py-16 md:py-20 space-y-8">

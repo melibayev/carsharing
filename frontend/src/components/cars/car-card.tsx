@@ -3,7 +3,7 @@ import { Star, Zap, Fuel, Cog, Users, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatUzs } from '@/lib/utils';
+import { formatUsd } from '@/lib/utils';
 import type { CarListDto } from '@/types';
 import { BodyType, Transmission, FuelType } from '@/types';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/use-favorites';
@@ -86,7 +86,7 @@ export function CarCard({ car }: CarCardProps) {
                 <p className="text-sm text-muted-foreground">{car.city}</p>
               </div>
               <div className="text-right">
-                <p className="font-mono font-bold text-lg">{formatUzs(car.dailyPriceUsd)}</p>
+                <p className="font-mono font-bold text-lg">{formatUsd(car.dailyPriceUsd)}</p>
                 <p className="text-xs text-muted-foreground">/day</p>
               </div>
             </div>

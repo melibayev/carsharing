@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAdminMetrics, useAdminUsers, useAdminBookings, useBanUser, useUnbanUser, useVerifyUser } from '@/hooks/use-admin';
-import { formatUzs, formatDate } from '@/lib/utils';
+import { formatUsd, formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { BookingStatus } from '@/types';
 
@@ -77,7 +77,7 @@ export default function AdminPage() {
             <CardContent className="p-4 flex items-center gap-3">
               <DollarSign className="h-8 w-8 text-yellow-500" />
               <div>
-                <p className="text-2xl font-bold font-mono">{formatUzs(metrics.totalRevenue)}</p>
+                <p className="text-2xl font-bold font-mono">{formatUsd(metrics.totalRevenue)}</p>
                 <p className="text-xs text-muted-foreground">Total Revenue</p>
               </div>
             </CardContent>
@@ -210,7 +210,7 @@ export default function AdminPage() {
                           <td className="p-3 font-medium">{b.carTitle}</td>
                           <td className="p-3 text-muted-foreground">{(b as any).guestName ?? 'Guest'}</td>
                           <td className="p-3 text-muted-foreground">{formatDate(b.startUtc)} - {formatDate(b.endUtc)}</td>
-                          <td className="p-3 font-mono">{formatUzs(b.totalChargedUsd)}</td>
+                          <td className="p-3 font-mono">{formatUsd(b.totalChargedUsd)}</td>
                           <td className="p-3"><Badge variant="outline">{statusLabels[b.status]}</Badge></td>
                         </tr>
                       ))}

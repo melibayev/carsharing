@@ -21,7 +21,7 @@ import {
 import { useBookingDetail, useApproveBooking, useRejectBooking, useCancelBooking, useCheckIn, useCheckOut } from '@/hooks/use-bookings';
 import { useCreateReview } from '@/hooks/use-reviews';
 import { useAuthStore } from '@/stores/auth-store';
-import { formatUzs, formatDateRange, formatDate, getInitials } from '@/lib/utils';
+import { formatUsd, formatDateRange, formatDate, getInitials } from '@/lib/utils';
 import { BookingStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -185,21 +185,21 @@ export default function BookingDetailPage() {
           {/* Pricing */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>{formatUzs(booking.dailyRateUsd)} x {booking.days} days</span>
-              <span className="font-mono">{formatUzs(booking.subtotalUsd)}</span>
+              <span>{formatUsd(booking.dailyRateUsd)} x {booking.days} days</span>
+              <span className="font-mono">{formatUsd(booking.subtotalUsd)}</span>
             </div>
-            <div className="flex justify-between"><span>Cleaning fee</span><span className="font-mono">{formatUzs(booking.cleaningFeeUsd)}</span></div>
-            <div className="flex justify-between"><span>Service fee</span><span className="font-mono">{formatUzs(booking.serviceFeeUsd)}</span></div>
-            <div className="flex justify-between"><span>Tax</span><span className="font-mono">{formatUzs(booking.taxesUsd)}</span></div>
+            <div className="flex justify-between"><span>Cleaning fee</span><span className="font-mono">{formatUsd(booking.cleaningFeeUsd)}</span></div>
+            <div className="flex justify-between"><span>Service fee</span><span className="font-mono">{formatUsd(booking.serviceFeeUsd)}</span></div>
+            <div className="flex justify-between"><span>Tax</span><span className="font-mono">{formatUsd(booking.taxesUsd)}</span></div>
             <Separator />
             <div className="flex justify-between font-semibold text-base">
               <span>Total</span>
-              <span className="font-mono">{formatUzs(booking.totalChargedUsd)}</span>
+              <span className="font-mono">{formatUsd(booking.totalChargedUsd)}</span>
             </div>
             {isHost && (
               <div className="flex justify-between text-green-600">
                 <span>Your payout</span>
-                <span className="font-mono">{formatUzs(booking.hostPayoutUsd)}</span>
+                <span className="font-mono">{formatUsd(booking.hostPayoutUsd)}</span>
               </div>
             )}
           </div>
