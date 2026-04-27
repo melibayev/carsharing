@@ -34,7 +34,7 @@ export default function CarDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { data: car, isLoading } = useCarDetail(id!);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -51,6 +51,14 @@ export default function CarDetailPage() {
   const handleBook = () => {
     if (!isAuthenticated()) {
       navigate('/login', { state: { from: { pathname: `/cars/${id}` } } });
+      return;
+    }
+    if (!user?.isIdentityVerified) {
+      navigate('/onboarding?step=3', { state: { from: { pathname: `/cars/${id}` } } });
+      toast({
+        title: 'Identity verification required',
+        description: 'Please complete identity verification before booking a car.',
+      });
       return;
     }
     if (!car || !startDate || !endDate) return;
@@ -461,7 +469,7 @@ export default function CarDetailPage() {
               <div className="px-6 pt-6 pb-5 border-b bg-gradient-to-br from-primary/5 to-transparent">
                 <div className="flex items-baseline gap-2">
                   <span className="text-[2.4rem] font-bold font-mono leading-none tracking-tight">
-                    {formatUzs(car.dailyPriceUsd, false)}
+                    {formatUzs(car.dailyPriceUsd)}
                   </span>
                   <span className="text-muted-foreground font-normal">/ day</span>
                 </div>
@@ -527,7 +535,7 @@ export default function CarDetailPage() {
                     >
                       <div className="rounded-xl bg-muted/40 px-4 py-3.5 space-y-2 text-sm">
                         <div className="flex justify-between text-muted-foreground">
-                          <span>{formatUzs(quote.dailyRateUsd, false)} × {quote.days} day{quote.days !== 1 ? 's' : ''}</span>
+                          <span>{formatUzs(quote.dailyRateUsd)} × {quote.days} day{quote.days !== 1 ? 's' : ''}</span>
                           <span className="font-mono tabular-nums">{formatUzs(quote.subtotalUsd)}</span>
                         </div>
                         {quote.discountAmount != null && quote.discountAmount > 0 && (

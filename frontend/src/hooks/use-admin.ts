@@ -197,8 +197,8 @@ export function useApproveCar() {
 export function useRejectCar() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (carId: string) => {
-      await api.post(`/admin/cars/${carId}/reject`);
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      await api.post(`/admin/cars/${id}/reject`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'cars'] });

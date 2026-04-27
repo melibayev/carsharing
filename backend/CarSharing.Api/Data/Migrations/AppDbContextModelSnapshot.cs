@@ -622,6 +622,10 @@ namespace CarSharing.Api.Data.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("TechPassportBackUrl")
                         .HasColumnType("text");
 

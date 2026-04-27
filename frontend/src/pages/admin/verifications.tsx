@@ -18,6 +18,15 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, ZoomIn } from 'lucide-react';
 import { KycStatus, type KycVerificationDto } from '@/types';
 
+const KYC_REJECT_PRESETS = [
+  'Passport did not match',
+  'Document photo is unclear',
+  'Document has expired',
+  'Selfie does not match document',
+  'Document information is incorrect',
+  'Wrong document type submitted',
+];
+
 const statusVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   [KycStatus.Pending]: 'secondary',
   [KycStatus.InReview]: 'secondary',
@@ -180,12 +189,28 @@ function ReviewDialog({
 
           {/* Rejection reason input */}
           {rejecting && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label className="text-xs text-destructive">Rejection reason *</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {KYC_REJECT_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setRejectionReason(preset)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                      rejectionReason === preset
+                        ? 'bg-destructive text-white border-destructive'
+                        : 'border-muted-foreground/30 hover:border-destructive/60 hover:text-destructive'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
               <Textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Explain why this document is rejected…"
+                placeholder="Or type a custom reason…"
                 rows={3}
                 autoFocus
               />

@@ -106,12 +106,13 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("cars/{id:guid}/reject")]
-    public async Task<IActionResult> RejectCar(Guid id)
+    public async Task<IActionResult> RejectCar(Guid id, [FromBody] RejectCarRequest request)
     {
         var car = await _db.Cars.FindAsync(id);
         if (car == null) return NotFound();
 
         car.Status = CarStatus.Removed;
+        car.RejectionReason = request.Reason?.Trim();
         await _db.SaveChangesAsync();
         return Ok();
     }

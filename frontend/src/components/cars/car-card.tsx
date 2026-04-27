@@ -86,7 +86,7 @@ export function CarCard({ car }: CarCardProps) {
                 <p className="text-sm text-muted-foreground">{car.city}</p>
               </div>
               <div className="text-right">
-                <p className="font-mono font-bold text-lg">{formatUzs(car.dailyPriceUsd, false)}</p>
+                <p className="font-mono font-bold text-lg">{formatUzs(car.dailyPriceUsd)}</p>
                 <p className="text-xs text-muted-foreground">/day</p>
               </div>
             </div>

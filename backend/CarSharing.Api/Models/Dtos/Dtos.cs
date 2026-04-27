@@ -207,6 +207,7 @@ public class BookingDto
 }
 
 public record RejectBookingRequest(string Reason);
+public record RejectCarRequest(string Reason);
 public record CancelBookingRequest(string Reason);
 public record CheckInRequest(int OdometerKm, List<string>? PhotoUrls);
 public record CheckOutRequest(int OdometerKm, List<string>? PhotoUrls);

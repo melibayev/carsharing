@@ -68,6 +68,7 @@ public class Car : AuditableEntity
     public bool RequiresManualReview { get; set; }
 
     public CarStatus Status { get; set; } = CarStatus.Draft;
+    public string? RejectionReason { get; set; }
     public bool IsInstantBook { get; set; }
     public VehicleTier VehicleTier { get; set; } = VehicleTier.Economy;
     public decimal AverageRating { get; set; }

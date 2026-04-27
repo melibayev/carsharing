@@ -17,6 +17,7 @@ const Profile = lazy(() => import('@/pages/profile'));
 const KycWizard = lazy(() => import('@/pages/kyc'));
 const Onboarding = lazy(() => import('@/pages/onboarding'));
 const VerifyEmail = lazy(() => import('@/pages/onboarding/verify-email'));
+const SetupChoice = lazy(() => import('@/pages/onboarding/setup-choice'));
 
 const MyBookings = lazy(() => import('@/pages/my-bookings'));
 const BecomeAHost = lazy(() => import('@/pages/host/become-a-host'));
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="register" element={<Register />} />
         <Route path="onboarding" element={<Onboarding />} />
         <Route path="onboarding/verify-email" element={<VerifyEmail />} />
+        <Route path="onboarding/setup-choice" element={<SetupChoice />} />
 
         <Route element={<RootLayout />}>
           {/* Public */}

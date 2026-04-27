@@ -15,7 +15,7 @@ export function PriceBreakdown({ dailyRate, days, cleaningFee = 0, serviceFee = 
     <div className="space-y-3 text-sm">
       <div className="flex justify-between">
         <span className="text-muted-foreground">
-          {formatUzs(dailyRate, false)} x {days} {days === 1 ? 'day' : 'days'}
+          {formatUzs(dailyRate)} x {days} {days === 1 ? 'day' : 'days'}
         </span>
         <span className="font-mono">{formatUzs(subtotal)}</span>
       </div>

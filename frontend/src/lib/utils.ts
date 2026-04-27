@@ -5,23 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format a number as USD: "$450" */
-export function formatUzs(amount: number, suffix = true): string {
-  return new Intl.NumberFormat('en-US', {
-    style: suffix ? 'currency' : 'decimal',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+/** Format a number as UZS: "500,000 UZS" */
+export function formatUzs(amount: number): string {
+  return (
+    new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount) + ' UZS'
+  );
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatUzs(amount);
 }
 
 export function formatDate(date: string | Date): string {

@@ -41,7 +41,7 @@ export default function VerifyEmailPage() {
   // Redirect already-verified users
   useEffect(() => {
     if (user?.emailConfirmed) {
-      navigate('/onboarding?step=3', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 
@@ -80,7 +80,7 @@ export default function VerifyEmailPage() {
       toast({ title: 'Email verified!' });
       completeStep(2);
       setStep(3);
-      setTimeout(() => navigate('/onboarding?step=3'), 600);
+      setTimeout(() => navigate('/onboarding/setup-choice'), 600);
     } catch (err: unknown) {
       const detail =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??

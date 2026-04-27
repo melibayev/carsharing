@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +18,15 @@ import { formatUzs, formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, ZoomIn, AlertTriangle } from 'lucide-react';
 import { CarStatus } from '@/types';
+
+const CAR_REJECT_PRESETS = [
+  'Car information is incorrect',
+  'Car price is too high',
+  'Technical passport does not match',
+  'Insurance document expired or invalid',
+  'Car photos are unclear or insufficient',
+  'VIN number mismatch',
+];
 
 const statusColor: Record<string, string> = {
   [CarStatus.Listed]: 'default',
@@ -66,14 +77,22 @@ function CarDocsDialog({ car, onClose }: { car: AdminCarDto; onClose: () => void
   const approveMutation = useApproveCar();
   const rejectMutation = useRejectCar();
   const { toast } = useToast();
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   const handleApprove = async () => {
     try { await approveMutation.mutateAsync(car.id); toast({ title: 'Car approved' }); onClose(); }
     catch { toast({ title: 'Failed to approve car', variant: 'destructive' }); }
   };
   const handleReject = async () => {
-    try { await rejectMutation.mutateAsync(car.id); toast({ title: 'Car rejected' }); onClose(); }
-    catch { toast({ title: 'Failed to reject car', variant: 'destructive' }); }
+    if (!rejectReason.trim()) return;
+    try {
+      await rejectMutation.mutateAsync({ id: car.id, reason: rejectReason });
+      toast({ title: 'Car rejected' });
+      onClose();
+    } catch {
+      toast({ title: 'Failed to reject car', variant: 'destructive' });
+    }
   };
 
   return (
@@ -197,23 +216,70 @@ function CarDocsDialog({ car, onClose }: { car: AdminCarDto; onClose: () => void
         )}
 
         {car.status === CarStatus.PendingApproval && (
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              className="text-destructive border-destructive/30 hover:bg-destructive/10"
-              onClick={handleReject}
-              disabled={rejectMutation.isPending || approveMutation.isPending}
-            >
-              <XCircle className="h-4 w-4 mr-1" /> Reject
-            </Button>
-            <Button
-              className="text-white bg-green-600 hover:bg-green-700"
-              onClick={handleApprove}
-              disabled={approveMutation.isPending || rejectMutation.isPending}
-            >
-              <CheckCircle className="h-4 w-4 mr-1" /> Approve
-            </Button>
-          </DialogFooter>
+          <>
+            {rejecting && (
+              <div className="space-y-2 pt-2">
+                <Label className="text-xs text-destructive">Rejection reason *</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {CAR_REJECT_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setRejectReason(preset)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition ${
+                        rejectReason === preset
+                          ? 'bg-destructive text-white border-destructive'
+                          : 'border-muted-foreground/30 hover:border-destructive/60 hover:text-destructive'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+                <Textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Or type a custom reason…"
+                  rows={3}
+                  autoFocus
+                />
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              {!rejecting ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => setRejecting(true)}
+                    disabled={rejectMutation.isPending || approveMutation.isPending}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" /> Reject
+                  </Button>
+                  <Button
+                    className="text-white bg-green-600 hover:bg-green-700"
+                    onClick={handleApprove}
+                    disabled={approveMutation.isPending || rejectMutation.isPending}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => { setRejecting(false); setRejectReason(''); }}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleReject}
+                    disabled={rejectMutation.isPending || !rejectReason.trim()}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" /> Confirm Rejection
+                  </Button>
+                </>
+              )}
+            </DialogFooter>
+          </>
         )}
       </DialogContent>
     </Dialog>

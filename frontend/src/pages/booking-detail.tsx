@@ -185,7 +185,7 @@ export default function BookingDetailPage() {
           {/* Pricing */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>{formatUzs(booking.dailyRateUsd, false)} x {booking.days} days</span>
+              <span>{formatUzs(booking.dailyRateUsd)} x {booking.days} days</span>
               <span className="font-mono">{formatUzs(booking.subtotalUsd)}</span>
             </div>
             <div className="flex justify-between"><span>Cleaning fee</span><span className="font-mono">{formatUzs(booking.cleaningFeeUsd)}</span></div>
