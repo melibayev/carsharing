@@ -11,7 +11,8 @@ public class MappingProfile : Profile
         DisableConstructorMapping();
         CreateMap<ApplicationUser, UserDto>();
 
-        CreateMap<ApplicationUser, UserPublicDto>();
+        CreateMap<ApplicationUser, UserPublicDto>()
+            .ForMember(d => d.IsAdmin, o => o.Ignore());
 
         CreateMap<CarPhoto, CarPhotoDto>();
 
@@ -21,7 +22,9 @@ public class MappingProfile : Profile
                 ?? s.Photos.OrderBy(p => p.SortOrder).Select(p => p.Url).FirstOrDefault()))
             .ForMember(d => d.PhotoUrls, o => o.MapFrom(s =>
                 s.Photos.OrderBy(p => p.SortOrder).Select(p => p.Url).ToList()))
-            .ForMember(d => d.DistanceKm, o => o.Ignore());
+            .ForMember(d => d.DistanceKm, o => o.Ignore())
+            .ForMember(d => d.Latitude, o => o.MapFrom(s => s.Location != null ? s.Location.Y : (double?)null))
+            .ForMember(d => d.Longitude, o => o.MapFrom(s => s.Location != null ? s.Location.X : (double?)null));
 
         CreateMap<Car, CarDetailDto>()
             .ForMember(d => d.Latitude, o => o.MapFrom(s => s.Location != null ? s.Location.Y : (double?)null))

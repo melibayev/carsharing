@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, ArrowLeft, Car, Star,
   MessageSquare, CheckCheck, Check, Calendar,
-  MapPin, Users, Zap, ArrowRight,
+  MapPin, Users, Zap, ArrowRight, Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -170,6 +170,7 @@ function ConversationItem({
   index: number;
 }) {
   const name = conv.otherParty?.firstName ?? 'User';
+  const isAdmin = conv.otherParty?.isAdmin;
 
   return (
     <motion.button
@@ -180,15 +181,30 @@ function ConversationItem({
       className={cn(
         'w-full flex items-start gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left border-b border-border/40 relative',
         isActive && 'bg-primary/5 border-l-2 border-l-primary',
+        isAdmin && 'bg-purple-50/50 dark:bg-purple-950/20',
       )}
     >
-      <UserAvatar name={name} photoUrl={conv.otherParty?.profilePhotoUrl} size={48} />
+      <div className="relative shrink-0">
+        <UserAvatar name={name} photoUrl={conv.otherParty?.profilePhotoUrl} size={48} />
+        {isAdmin && (
+          <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-purple-600 border-2 border-background flex items-center justify-center">
+            <Shield className="h-2.5 w-2.5 text-white" />
+          </span>
+        )}
+      </div>
 
       <div className="flex-1 min-w-0 pt-0.5">
         <div className="flex items-center justify-between gap-1">
-          <span className={cn('text-sm truncate', conv.unreadCount > 0 ? 'font-bold' : 'font-semibold')}>
-            {name}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className={cn('text-sm truncate', conv.unreadCount > 0 ? 'font-bold' : 'font-semibold')}>
+              {isAdmin ? 'Support Team' : name}
+            </span>
+            {isAdmin && (
+              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                Admin
+              </span>
+            )}
+          </div>
           <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
             {conv.lastMessage ? formatTime(conv.lastMessage.sentAt) : ''}
           </span>
@@ -228,6 +244,7 @@ function MessageBubble({
   otherPartyPhotoUrl,
   bookingId,
   isHost,
+  isAdminConversation,
 }: {
   msg: MessageDto;
   isMe: boolean;
@@ -237,6 +254,7 @@ function MessageBubble({
   otherPartyPhotoUrl?: string | null;
   bookingId: string;
   isHost: boolean;
+  isAdminConversation?: boolean;
 }) {
   if (msg.type === 'BookingCard' && msg.bookingPreview) {
     return (
@@ -258,7 +276,11 @@ function MessageBubble({
         <div
           className={cn(
             'px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words',
-            isMe ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+            isMe
+              ? 'bg-primary text-primary-foreground'
+              : isAdminConversation
+                ? 'bg-purple-100 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100'
+                : 'bg-muted text-foreground',
             isMe
               ? cn('rounded-l-2xl', isFirst ? 'rounded-tr-2xl' : 'rounded-tr-md', isLast ? 'rounded-br-sm' : 'rounded-br-md')
               : cn('rounded-r-2xl', isFirst ? 'rounded-tl-2xl' : 'rounded-tl-md', isLast ? 'rounded-bl-sm' : 'rounded-bl-md'),
@@ -378,6 +400,7 @@ export default function MessagesPage() {
   }
 
   const otherPartyName = selectedConv?.otherParty?.firstName ?? 'User';
+  const isAdminConv = selectedConv?.otherParty?.isAdmin ?? false;
 
   return (
     <div className="flex h-[calc(100dvh-64px)] overflow-hidden bg-background">
@@ -451,11 +474,23 @@ export default function MessagesPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
 
-              <UserAvatar name={otherPartyName} photoUrl={selectedConv.otherParty?.profilePhotoUrl} size={40} />
+              <div className="relative shrink-0">
+                <UserAvatar name={otherPartyName} photoUrl={selectedConv.otherParty?.profilePhotoUrl} size={40} />
+                {isAdminConv && (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-purple-600 border-2 border-background flex items-center justify-center">
+                    <Shield className="h-2 w-2 text-white" />
+                  </span>
+                )}
+              </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm truncate">{otherPartyName}</p>
+                  <p className="font-semibold text-sm truncate">{isAdminConv ? 'Support Team' : otherPartyName}</p>
+                  {isAdminConv && (
+                    <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                      Admin
+                    </span>
+                  )}
                   {selectedConv.otherParty?.averageRatingAsHost != null &&
                     selectedConv.otherParty.averageRatingAsHost > 0 && (
                     <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
@@ -524,6 +559,7 @@ export default function MessagesPage() {
                                   otherPartyPhotoUrl={selectedConv.otherParty?.profilePhotoUrl}
                                   bookingId={selectedBookingId}
                                   isHost={isHost}
+                                  isAdminConversation={isAdminConv}
                                 />
                               </motion.div>
                             </AnimatePresence>

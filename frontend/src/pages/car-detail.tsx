@@ -45,16 +45,28 @@ export default function CarDetailPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Minimum selectable start date = now + advanceNoticeHours (default 24h)
+  // Minimum selectable start date: local date of (now + advanceNoticeHours)
+  // We use local date components (not UTC) so Tashkent users can always book "tomorrow".
   const minStartDate = (() => {
-    const d = new Date();
-    d.setHours(d.getHours() + (car?.advanceNoticeHours ?? 24) + 1);
-    return d.toISOString().split('T')[0];
+    const d = new Date(Date.now() + ((car?.advanceNoticeHours ?? 24) * 3600000));
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const dy = String(d.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${dy}`;
   })();
 
-  // Convert a date-picker value ("YYYY-MM-DD") to a UTC ISO string
-  // Use noon local time to safely clear the 24h advance-notice window
-  const toUtc = (dateStr: string) => new Date(dateStr + 'T12:00:00').toISOString();
+  // Convert a date-picker value ("YYYY-MM-DD") to a UTC ISO string.
+  // Use end-of-local-day (T23:59:00) so the 24h advance-notice window is
+  // maximised for users in UTC+ timezones (e.g. Tashkent UTC+5).
+  const toUtc = (dateStr: string) => new Date(dateStr + 'T23:59:00').toISOString();
+
+  // Minimum end date = 1 day after the chosen start (so at least 1 trip day)
+  const minEndDate = (() => {
+    const base = startDate || minStartDate;
+    const parts = base.split('-').map(Number);
+    const next = new Date(parts[0]!, parts[1]! - 1, parts[2]! + 1);
+    return [next.getFullYear(), String(next.getMonth() + 1).padStart(2, '0'), String(next.getDate()).padStart(2, '0')].join('-');
+  })();
   const [guestMessage, setGuestMessage] = useState('');
   const [showVerifyBanner, setShowVerifyBanner] = useState(false);
 
@@ -527,7 +539,7 @@ export default function CarDetailPage() {
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      min={startDate || minStartDate}
+                      min={minEndDate}
                       className="border-0 p-0 h-auto text-sm font-semibold focus-visible:ring-0 bg-transparent shadow-none"
                     />
                   </div>

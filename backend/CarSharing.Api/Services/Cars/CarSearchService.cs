@@ -116,14 +116,18 @@ public class CarSearchService : ICarSearchService
         }
 
         // Geo filtering
+        // NOTE: Location is stored as PostGIS geometry with SRID 4326 (WGS84 degrees).
+        // Distance() and IsWithinDistance() therefore work in degrees, not metres.
+        // 1 degree ≈ 111.32 km at the equator (good enough for in-city searches).
+        const double KmPerDegree = 111.32;
         Point? searchPoint = null;
         if (request.Lat.HasValue && request.Lng.HasValue)
         {
             var geometryFactory = NetTopologySuite.NtsGeometryServices.Instance.CreateGeometryFactory(4326);
             searchPoint = geometryFactory.CreatePoint(new Coordinate(request.Lng.Value, request.Lat.Value));
-            var radiusMeters = (request.RadiusKm ?? 50) * 1000;
+            var radiusDegrees = (request.RadiusKm ?? 50) / KmPerDegree;
 
-            query = query.Where(c => c.Location != null && c.Location.IsWithinDistance(searchPoint, radiusMeters));
+            query = query.Where(c => c.Location != null && c.Location.IsWithinDistance(searchPoint, radiusDegrees));
         }
 
         // Total count before paging
@@ -152,8 +156,9 @@ public class CarSearchService : ICarSearchService
             var dto = _mapper.Map<CarListDto>(car);
             if (searchPoint != null && car.Location != null)
             {
-                var distanceMeters = car.Location.Distance(searchPoint);
-                dto.DistanceKm = Math.Round(distanceMeters / 1000.0, 1);
+                // Distance() returns degrees for geometry SRID 4326; convert to km
+                var distanceKm = car.Location.Distance(searchPoint) * KmPerDegree;
+                dto.DistanceKm = Math.Round(distanceKm, 1);
             }
             return dto;
         }).ToList();

@@ -31,6 +31,12 @@ public class MessageService : IMessageService
             .OrderByDescending(c => c.Messages.Max(m => (DateTimeOffset?)m.SentAt) ?? c.CreatedAt)
             .ToListAsync();
 
+        // Pre-fetch admin user IDs so we can badge them in the UI
+        var adminRole = await _db.Roles.FirstOrDefaultAsync(r => r.NormalizedName == "ADMIN");
+        var adminUserIds = adminRole != null
+            ? (await _db.UserRoles.Where(ur => ur.RoleId == adminRole.Id).Select(ur => ur.UserId).ToListAsync()).ToHashSet()
+            : new HashSet<Guid>();
+
         return conversations.Select(c =>
         {
             var isGuest = c.Booking.GuestId == userId;
@@ -45,13 +51,17 @@ public class MessageService : IMessageService
                 lastMsgDto = BuildMessageDto(lastMsg, c.Booking);
             }
 
+            var otherPartyDto = _mapper.Map<UserPublicDto>(otherParty);
+            if (otherPartyDto != null && otherParty != null)
+                otherPartyDto.IsAdmin = adminUserIds.Contains(otherParty.Id);
+
             return new ConversationDto
             {
                 Id = c.Id,
                 BookingId = c.BookingId,
                 CarTitle = $"{c.Booking.Car.Year} {c.Booking.Car.Make} {c.Booking.Car.Model}",
                 CoverPhotoUrl = c.Booking.Car.Photos.Where(p => p.IsCover).Select(p => p.Url).FirstOrDefault(),
-                OtherParty = _mapper.Map<UserPublicDto>(otherParty),
+                OtherParty = otherPartyDto,
                 LastMessage = lastMsgDto,
                 UnreadCount = unreadCount
             };

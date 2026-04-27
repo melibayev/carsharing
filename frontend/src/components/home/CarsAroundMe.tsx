@@ -71,33 +71,16 @@ function MapView({ userLat, userLng, cars, activeCar, onCarClick }: MapViewProps
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    // Remove old markers
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
-    cars.forEach((_car) => {
-      // Try to use car lat/lng from CarListDto if available — not in list dto.
-      // We'll render markers with a generic location fallback, but the real
-      // position cannot be derived from CarListDto (no lat/lng fields).
-      // Instead we cluster at a slight offset from user position based on index.
-    });
-  }, [cars, activeCar, onCarClick]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    // Re-add markers whenever cars list changes
+    // Remove and re-add markers whenever the cars list changes.
+    // Use actual car coordinates from the backend (CarListDto.latitude/longitude).
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    cars.forEach((car, i) => {
-      // CarListDto's lat/lng isn't exposed directly from search results.
-      // We'll approximate positions around user based on dummy offsets for now.
-      // Backend could expose lat/lng in CarListDto in future.
-      // For now, place markers in a loose ring around user.
-      const angle = (i / Math.max(cars.length, 1)) * 2 * Math.PI;
-      const radius = 0.02 + (Math.random() * 0.03);
-      const lat = userLat + radius * Math.cos(angle);
-      const lng = userLng + radius * Math.sin(angle);
+    cars.forEach((car) => {
+      // Only place a marker if the car has real coordinates
+      const lat = car.latitude;
+      const lng = car.longitude;
+      if (lat == null || lng == null) return;
 
       const marker = L.marker([lat, lng], { icon: carIcon })
         .addTo(map)
@@ -110,12 +93,16 @@ function MapView({ userLat, userLng, cars, activeCar, onCarClick }: MapViewProps
     });
 
     if (activeCar) {
-      const idx = cars.findIndex((c) => c.id === activeCar);
-      if (idx >= 0 && markersRef.current[idx]) {
-        markersRef.current[idx].openPopup();
+      const activeCarData = cars.find((c) => c.id === activeCar);
+      if (activeCarData?.latitude != null && activeCarData?.longitude != null) {
+        const idx = cars.filter((c) => c.latitude != null).findIndex((c) => c.id === activeCar);
+        if (idx >= 0 && markersRef.current[idx]) {
+          markersRef.current[idx].openPopup();
+          map.panTo([activeCarData.latitude, activeCarData.longitude]);
+        }
       }
     }
-  }, [cars, activeCar, onCarClick, userLat, userLng]);
+  }, [cars, activeCar, onCarClick]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }

@@ -113,6 +113,7 @@ export interface UserPublicDto {
   averageRatingAsHost: number;
   hostTripCount: number;
   createdAt: string;
+  isAdmin?: boolean;
 }
 
 export interface UpdateProfileRequest {
@@ -140,6 +141,8 @@ export interface CarListDto {
   coverPhotoUrl: string | null;
   photoUrls: string[];
   distanceKm: number | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface CarDetailDto {

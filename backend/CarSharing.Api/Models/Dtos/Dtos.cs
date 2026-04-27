@@ -42,6 +42,7 @@ public class UserPublicDto
     public decimal AverageRatingAsHost { get; set; }
     public int HostTripCount { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public bool IsAdmin { get; set; }
 }
 
 public record UpdateProfileRequest(
@@ -66,6 +67,8 @@ public class CarListDto
     public string? CoverPhotoUrl { get; set; }
     public List<string> PhotoUrls { get; set; } = new();
     public double? DistanceKm { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }
 
 public class CarDetailDto
