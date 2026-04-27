@@ -4,6 +4,7 @@ import { Navbar } from './navbar';
 import { Footer } from './footer';
 import { MobileBottomNav } from './mobile-bottom-nav';
 import { Toaster } from '@/components/ui/toaster';
+import SupportWidget from '@/components/shared/SupportWidget';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -24,6 +25,7 @@ export default function RootLayout() {
       <Footer />
       <MobileBottomNav />
       <Toaster />
+      <SupportWidget />
     </div>
   );
 }

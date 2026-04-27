@@ -45,6 +45,7 @@ export function useLogout() {
     onSettled: () => {
       logout();
       queryClient.clear();
+      window.location.href = '/';
     },
   });
 }

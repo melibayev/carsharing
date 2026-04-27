@@ -21,6 +21,7 @@ import { useProfile } from '@/hooks/use-auth';
 import { formatUzs, formatDate, getInitials } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Transmission, FuelType } from '@/types';
+import YandexMapView from '@/components/shared/YandexMapView';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -453,6 +454,13 @@ export default function CarDetailPage() {
                   </div>
                 </div>
               </motion.div>
+            )}
+
+            {car.latitude && car.longitude && (
+              <>
+                <Separator />
+                <YandexMapView lat={car.latitude} lng={car.longitude} city={car.city} />
+              </>
             )}
           </motion.div>
 

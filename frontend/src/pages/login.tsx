@@ -35,7 +35,7 @@ export default function LoginPage() {
   const onSubmit = (data: LoginForm) => {
     setError('');
     loginMutation.mutate(data, {
-      onSuccess: () => navigate(from, { replace: true }),
+      onSuccess: () => navigate('/', { replace: true }),
       onError: (err) => {
         const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
         setError(msg || 'Invalid email or password');

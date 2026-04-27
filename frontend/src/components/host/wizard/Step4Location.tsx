@@ -8,8 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { usePatchDraft } from '@/hooks/use-host';
 import { useListingWizardStore } from '@/stores/listing-wizard-store';
+import YandexMapPicker from '@/components/shared/YandexMapPicker';
 
 const schema = z.object({
+  addressLine: z.string().min(3, 'Address is required'),
+  city: z.string().min(2, 'City is required'),
+  lat: z.number({ required_error: 'Please pin a location on the map' }),
+  lng: z.number({ required_error: 'Please pin a location on the map' }),
   privacyRadiusMeters: z.coerce.number().min(200).max(5000),
   canDeliverToAirports: z.boolean(),
   selfCheckInAvailable: z.boolean(),
@@ -25,6 +30,10 @@ export default function Step4Location({ draftId, onNext }: { draftId: string; on
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      addressLine: (localData as any).addressLine ?? '',
+      city: (localData as any).city ?? '',
+      lat: (localData as any).lat ?? undefined,
+      lng: (localData as any).lng ?? undefined,
       privacyRadiusMeters: (localData as any).privacyRadiusMeters ?? 500,
       canDeliverToAirports: (localData as any).canDeliverToAirports ?? false,
       selfCheckInAvailable: (localData as any).selfCheckInAvailable ?? false,
@@ -35,6 +44,8 @@ export default function Step4Location({ draftId, onNext }: { draftId: string; on
   const canDeliver = watch('canDeliverToAirports');
   const selfCheckIn = watch('selfCheckInAvailable');
   const gps = watch('gpsTrackerInstalled');
+  const lat = watch('lat');
+  const lng = watch('lng');
 
   async function onSubmit(values: FormValues) {
     await patch.mutateAsync({ ...values, currentStep: 'LocationAvailability' } as any);
@@ -45,6 +56,43 @@ export default function Step4Location({ draftId, onNext }: { draftId: string; on
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <h2 className="text-xl font-semibold">Location & Availability</h2>
+
+      {/* Address fields */}
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <Label>Street Address</Label>
+          <Input placeholder="e.g. Amir Temur ko'chasi 1" {...register('addressLine')} />
+          {errors.addressLine && (
+            <p className="text-xs text-destructive">{errors.addressLine.message}</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <Label>City</Label>
+          <Input placeholder="e.g. Tashkent" {...register('city')} />
+          {errors.city && (
+            <p className="text-xs text-destructive">{errors.city.message}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Map picker */}
+      <div className="space-y-1">
+        <Label>Pin Location on Map</Label>
+        <p className="text-xs text-muted-foreground">
+          Click the map or use "My location" to set the pickup coordinates. Renters see an approximate zone.
+        </p>
+        <YandexMapPicker
+          lat={lat}
+          lng={lng}
+          onChange={(latV, lngV) => {
+            setValue('lat', latV, { shouldValidate: true });
+            setValue('lng', lngV, { shouldValidate: true });
+          }}
+        />
+        {(errors.lat || errors.lng) && (
+          <p className="text-xs text-destructive">Please pin a location on the map</p>
+        )}
+      </div>
 
       <div className="space-y-1">
         <Label>Privacy Radius (meters)</Label>
