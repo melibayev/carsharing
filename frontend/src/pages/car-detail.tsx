@@ -17,6 +17,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useCarDetail } from '@/hooks/use-cars';
 import { useQuote, useCreateBooking } from '@/hooks/use-bookings';
 import { useAuthStore } from '@/stores/auth-store';
+import { useProfile } from '@/hooks/use-auth';
 import { formatUzs, formatDate, getInitials } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Transmission, FuelType } from '@/types';
@@ -35,6 +36,8 @@ export default function CarDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuthStore();
+  const { data: profile } = useProfile();
+  const identityVerified = profile?.isIdentityVerified ?? user?.isIdentityVerified ?? false;
   const { data: car, isLoading } = useCarDetail(id!);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -54,7 +57,7 @@ export default function CarDetailPage() {
       navigate('/login', { state: { from: { pathname: `/cars/${id}` } } });
       return;
     }
-    if (!user?.isIdentityVerified) {
+    if (!identityVerified) {
       setShowVerifyBanner(true);
       return;
     }

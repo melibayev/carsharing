@@ -51,10 +51,12 @@ export function useLogout() {
 
 export function useProfile() {
   const token = useAuthStore((s) => s.token);
+  const setUser = useAuthStore((s) => s.setUser);
   return useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       const res = await api.get<UserDto>('/auth/me');
+      setUser(res.data);
       return res.data;
     },
     enabled: !!token,
