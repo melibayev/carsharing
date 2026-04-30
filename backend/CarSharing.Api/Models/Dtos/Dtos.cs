@@ -247,6 +247,7 @@ public class ConversationDto
     public UserPublicDto? OtherParty { get; set; }
     public MessageDto? LastMessage { get; set; }
     public int UnreadCount { get; set; }
+    public bool IsArchived { get; set; }
 }
 
 public class BookingPreviewDto
@@ -276,9 +277,17 @@ public class MessageDto
     public BookingPreviewDto? BookingPreview { get; set; }
     public DateTimeOffset SentAt { get; set; }
     public DateTimeOffset? ReadAt { get; set; }
+    public DateTimeOffset? EditedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public Guid? ReplyToMessageId { get; set; }
+    public string? ReplyToSenderName { get; set; }
+    public string? ReplyToBody { get; set; }
+    public string? ReplyToType { get; set; }
+    public string? ReplyToAttachmentUrl { get; set; }
 }
 
-public record SendMessageRequest(string Body);
+public record SendMessageRequest(string Body, Guid? ReplyToMessageId = null);
+public record EditMessageRequest(string Body);
 
 // === Notification DTOs ===
 public class NotificationDto
@@ -643,6 +652,8 @@ public class LedgerEntryDto
     public string Description { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; }
     public Guid? RelatedBookingId { get; set; }
+    public string? CarTitle { get; set; }
+    public string? CarPhotoUrl { get; set; }
 }
 
 public record TopUpIntentRequest(decimal AmountUzs, Guid? PaymentMethodId);
@@ -651,11 +662,12 @@ public class TopUpIntentResponse
 {
     public Guid IntentId { get; set; }
     public bool SmsRequired { get; set; }
+    public string PhoneHint { get; set; } = "";
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset? NextResendAllowedAt { get; set; }
 }
 
-public record ConfirmTopUpRequest(Guid IntentId, string SmsCode);
+public record ConfirmTopUpRequest(Guid IntentId, string Code);
 
 // Payment Methods
 public class UserPaymentMethodDto
@@ -674,24 +686,26 @@ public class UserPaymentMethodDto
 }
 
 public record AddCardIntentRequest(
-    string Type,         // "VisaMasterCard" | "UzcardCard" | "HumoCard"
     string CardNumber,
     int ExpMonth,
     int ExpYear,
-    string Cvv,
-    string CardholderName);
+    string? Cvv,              // null/empty for UzCard & Humo (no CVV on local cards)
+    string CardholderName,
+    string? Type = null);     // auto-detected from card prefix if omitted
 
 public class AddCardIntentResponse
 {
-    public Guid PendingId { get; set; }
+    public Guid PaymentMethodId { get; set; }
+    public string MaskedCard { get; set; } = "";
+    public string PhoneHint { get; set; } = "";
     public string Last4 { get; set; } = "";
     public string Brand { get; set; } = "";
     public DateTimeOffset SmsExpiresAt { get; set; }
     public DateTimeOffset? NextResendAllowedAt { get; set; }
 }
 
-public record ConfirmCardRequest(Guid PendingId, string SmsCode);
-public record ResendCardSmsRequest(Guid PendingId);
+public record ConfirmCardRequest(Guid PaymentMethodId, string Code);
+public record ResendCardSmsRequest(Guid PaymentMethodId);
 
 // Checkout
 public class CheckoutDto

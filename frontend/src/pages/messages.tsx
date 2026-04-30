@@ -5,10 +5,17 @@ import {
   Send, ArrowLeft, Car, Star,
   MessageSquare, CheckCheck, Check, Calendar,
   MapPin, Users, Zap, ArrowRight, Shield,
+  MoreVertical, Archive, ArchiveRestore, Trash2, Pencil, Paperclip, X, ImageIcon, Reply,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/shared/UserAvatar';
 import {
@@ -16,6 +23,11 @@ import {
   useMessages,
   useSendMessage,
   useMarkConversationRead,
+  useArchiveConversation,
+  useDeleteConversation,
+  useEditMessage,
+  useDeleteMessage,
+  useSendImageMessage,
 } from '@/hooks/use-messages';
 import { useAuthStore } from '@/stores/auth-store';
 import type { BookingPreviewDto, MessageDto, ConversationDto } from '@/types';
@@ -163,83 +175,151 @@ function ConversationItem({
   isActive,
   onClick,
   index,
+  onArchive,
+  onDelete,
 }: {
   conv: ConversationDto;
   isActive: boolean;
   onClick: () => void;
   index: number;
+  onArchive: (conv: ConversationDto) => void;
+  onDelete: (conv: ConversationDto) => void;
 }) {
   const name = conv.otherParty?.firstName ?? 'User';
   const isAdmin = conv.otherParty?.isAdmin;
 
   return (
-    <motion.button
+    <motion.div
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.04, duration: 0.2 }}
-      onClick={onClick}
       className={cn(
-        'w-full flex items-start gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left border-b border-border/40 relative',
+        'group relative w-full flex items-start hover:bg-muted/50 transition-colors border-b border-border/40',
         isActive && 'bg-primary/5 border-l-2 border-l-primary',
         isAdmin && 'bg-purple-50/50 dark:bg-purple-950/20',
       )}
     >
-      <div className="relative shrink-0">
-        <UserAvatar name={name} photoUrl={conv.otherParty?.profilePhotoUrl} size={48} />
-        {isAdmin && (
-          <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-purple-600 border-2 border-background flex items-center justify-center">
-            <Shield className="h-2.5 w-2.5 text-white" />
-          </span>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0 pt-0.5">
-        <div className="flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className={cn('text-sm truncate', conv.unreadCount > 0 ? 'font-bold' : 'font-semibold')}>
-              {isAdmin ? 'Support Team' : name}
+      <button className="flex items-start gap-3 flex-1 min-w-0 text-left px-4 py-3.5 pr-10" onClick={onClick}>
+        <div className="relative shrink-0">
+          <UserAvatar name={name} photoUrl={conv.otherParty?.profilePhotoUrl} size={48} />
+          {isAdmin && (
+            <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-purple-600 border-2 border-background flex items-center justify-center">
+              <Shield className="h-2.5 w-2.5 text-white" />
             </span>
-            {isAdmin && (
-              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
-                Admin
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className={cn('text-sm truncate', conv.unreadCount > 0 ? 'font-bold' : 'font-semibold')}>
+                {isAdmin ? 'Support Team' : name}
+              </span>
+              {isAdmin && (
+                <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                  Admin
+                </span>
+              )}
+              {conv.isArchived && (
+                <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                  Archived
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
+              {conv.lastMessage ? formatTime(conv.lastMessage.sentAt) : ''}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 mt-0.5">
+            {conv.carTitle ? (
+              <>
+                <Car className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground truncate">{conv.carTitle}</span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">Direct message</span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 mt-1">
+            <p className={cn(
+              'text-xs truncate leading-tight',
+              conv.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground',
+            )}>
+              {lastMessagePreview(conv.lastMessage)}
+            </p>
+            {conv.unreadCount > 0 && (
+              <span className="shrink-0 h-5 min-w-[20px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
               </span>
             )}
           </div>
-          <span className="text-[10px] text-muted-foreground shrink-0 ml-1">
-            {conv.lastMessage ? formatTime(conv.lastMessage.sentAt) : ''}
-          </span>
         </div>
+      </button>
 
-        <div className="flex items-center gap-1 mt-0.5">
-          {conv.carTitle ? (
-            <>
-              <Car className="h-3 w-3 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">{conv.carTitle}</span>
-            </>
-          ) : (
-            <span className="text-xs text-muted-foreground">Direct message</span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <p className={cn(
-            'text-xs truncate leading-tight',
-            conv.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground',
-          )}>
-            {lastMessagePreview(conv.lastMessage)}
-          </p>
-          {conv.unreadCount > 0 && (
-            <span className="shrink-0 h-5 min-w-[20px] px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-              {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.button>
+      {/* Context menu — visible on hover */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus:opacity-100 h-7 w-7 flex items-center justify-center rounded-md hover:bg-muted transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); onArchive(conv); }}
+            className="gap-2"
+          >
+            {conv.isArchived
+              ? <><ArchiveRestore className="h-4 w-4" /> Unarchive</>
+              : <><Archive className="h-4 w-4" /> Archive</>
+            }
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); onDelete(conv); }}
+            className="gap-2 text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </motion.div>
   );
 }
 
 // ─── MessageBubble ─────────────────────────────────────────────────────────────────────────────
+
+function ReplyQuote({
+  senderName, body, type, attachmentUrl, isMe, isAdminConversation,
+}: {
+  senderName: string; body: string | null; type: string | null;
+  attachmentUrl: string | null; isMe: boolean; isAdminConversation?: boolean;
+}) {
+  return (
+    <div className={cn(
+      'flex items-center gap-2 px-3 py-1.5 rounded-xl mb-1 text-xs max-w-full cursor-default',
+      'border-l-2',
+      isMe
+        ? 'bg-primary/20 border-primary-foreground/40 text-primary-foreground/80'
+        : isAdminConversation
+          ? 'bg-purple-200/60 border-purple-400 text-purple-900 dark:bg-purple-800/30 dark:text-purple-200'
+          : 'bg-muted/80 border-border text-muted-foreground',
+    )}>
+      {type === 'Image' && (attachmentUrl || !body) ? (
+        <ImageIcon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+      ) : null}
+      <div className="min-w-0">
+        <p className="font-semibold truncate leading-none mb-0.5">{senderName}</p>
+        <p className="truncate leading-snug opacity-90">
+          {type === 'Image' && !body ? 'Photo' : (body ?? 'This message was deleted')}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function MessageBubble({
   msg,
@@ -251,6 +331,9 @@ function MessageBubble({
   bookingId,
   isHost,
   isAdminConversation,
+  onEdit,
+  onDelete,
+  onReply,
 }: {
   msg: MessageDto;
   isMe: boolean;
@@ -261,6 +344,9 @@ function MessageBubble({
   bookingId: string;
   isHost: boolean;
   isAdminConversation?: boolean;
+  onEdit: (msg: MessageDto) => void;
+  onDelete: (msg: MessageDto) => void;
+  onReply: (msg: MessageDto) => void;
 }) {
   if (msg.type === 'BookingCard' && msg.bookingPreview) {
     return (
@@ -270,43 +356,128 @@ function MessageBubble({
     );
   }
 
+  const canEdit = isMe && !msg.isDeleted && msg.type === 'Text';
+  const canDelete = isMe && !msg.isDeleted && (msg.type === 'Text' || msg.type === 'Image');
+  const canReply = !msg.isDeleted && msg.type !== 'BookingCard';
+
   return (
-    <div className={cn('flex gap-2', isMe ? 'justify-end' : 'justify-start')}>
+    <div className={cn('group flex gap-2', isMe ? 'justify-end' : 'justify-start')}>
       {!isMe && (
         <div className="shrink-0 w-7 flex items-end">
           {isLast && <UserAvatar name={otherPartyName} photoUrl={otherPartyPhotoUrl} size={32} />}
         </div>
       )}
 
-      <div className={cn('flex flex-col max-w-[72%]', isMe && 'items-end')}>
-        <div
-          className={cn(
-            'px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words',
-            isMe
-              ? 'bg-primary text-primary-foreground'
-              : isAdminConversation
-                ? 'bg-purple-100 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100'
-                : 'bg-muted text-foreground',
-            isMe
-              ? cn('rounded-l-2xl', isFirst ? 'rounded-tr-2xl' : 'rounded-tr-md', isLast ? 'rounded-br-sm' : 'rounded-br-md')
-              : cn('rounded-r-2xl', isFirst ? 'rounded-tl-2xl' : 'rounded-tl-md', isLast ? 'rounded-bl-sm' : 'rounded-bl-md'),
+      <div className={cn('flex items-end gap-1 max-w-[78%]', isMe ? 'flex-row-reverse' : 'flex-row')}>
+        {/* Action buttons row — appear on group hover */}
+        <div className={cn(
+          'flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mb-1',
+          isMe ? 'flex-row-reverse' : 'flex-row',
+        )}>
+          {/* Reply button — for all non-deleted, non-BookingCard messages */}
+          {canReply && (
+            <button
+              onClick={() => onReply(msg)}
+              className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+              title="Reply"
+            >
+              <Reply className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
           )}
-        >
-          {msg.body}
+
+          {/* Context menu — edit/delete for own messages */}
+          {(canEdit || canDelete) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
+                  <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(msg)} className="gap-2">
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={() => onDelete(msg)}
+                    className="gap-2 text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
-        {isLast && (
-          <div className={cn(
-            'flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5 px-1',
-            isMe && 'flex-row-reverse',
-          )}>
-            <span>{formatMessageTime(msg.sentAt)}</span>
-            {isMe && (msg.readAt
-              ? <CheckCheck className="h-3 w-3 text-primary" />
-              : <Check className="h-3 w-3" />
+        <div className={cn('flex flex-col min-w-0', isMe && 'items-end')}>
+          <div
+            className={cn(
+              'text-sm leading-relaxed',
+              msg.isDeleted
+                ? 'italic text-muted-foreground bg-muted/50 border border-dashed border-border px-4 py-2.5'
+                : msg.type === 'Image'
+                  ? cn('p-1.5 overflow-hidden',
+                      isMe
+                        ? 'bg-primary/10'
+                        : isAdminConversation
+                          ? 'bg-purple-100 dark:bg-purple-900/40'
+                          : 'bg-muted')
+                  : cn('px-4 py-2.5 whitespace-pre-wrap break-words',
+                      isMe
+                        ? 'bg-primary text-primary-foreground'
+                        : isAdminConversation
+                          ? 'bg-purple-100 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100'
+                          : 'bg-muted text-foreground'),
+              isMe
+                ? cn('rounded-l-2xl', isFirst ? 'rounded-tr-2xl' : 'rounded-tr-md', isLast ? 'rounded-br-sm' : 'rounded-br-md')
+                : cn('rounded-r-2xl', isFirst ? 'rounded-tl-2xl' : 'rounded-tl-md', isLast ? 'rounded-bl-sm' : 'rounded-bl-md'),
+            )}
+          >
+            {/* Reply quote */}
+            {!msg.isDeleted && msg.replyToMessageId && (
+              <ReplyQuote
+                senderName={msg.replyToSenderName ?? 'User'}
+                body={msg.replyToBody}
+                type={msg.replyToType}
+                attachmentUrl={msg.replyToAttachmentUrl}
+                isMe={isMe}
+                isAdminConversation={isAdminConversation}
+              />
+            )}
+
+            {msg.isDeleted ? (
+              'This message was deleted'
+            ) : msg.type === 'Image' && msg.attachmentUrl ? (
+              <img
+                src={msg.attachmentUrl}
+                alt="Shared image"
+                className="block max-w-full max-h-72 rounded-xl object-contain cursor-pointer"
+                onClick={() => window.open(msg.attachmentUrl!, '_blank', 'noopener,noreferrer')}
+              />
+            ) : (
+              msg.body
             )}
           </div>
-        )}
+
+          {isLast && (
+            <div className={cn(
+              'flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5 px-1',
+              isMe && 'flex-row-reverse',
+            )}>
+              <span>{formatMessageTime(msg.sentAt)}</span>
+              {msg.editedAt && !msg.isDeleted && (
+                <span className="text-muted-foreground/70">edited</span>
+              )}
+              {isMe && (msg.readAt
+                ? <CheckCheck className="h-3 w-3 text-primary" />
+                : <Check className="h-3 w-3" />
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -319,21 +490,101 @@ export default function MessagesPage() {
   const navigate = useNavigate();
   const { conversationId } = useParams<{ conversationId?: string }>();
 
-  const { data: conversations, isLoading: convsLoading } = useConversations();
+  const [showArchived, setShowArchived] = useState(false);
+  const { data: conversations, isLoading: convsLoading } = useConversations(showArchived);
+  const archiveMutation = useArchiveConversation();
+  const deleteMutation = useDeleteConversation();
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(conversationId ?? null);
 
-  const selectedConv = conversations?.find((c) => c.bookingId === selectedBookingId);
+  const selectedConv = conversations?.find((c) => (c.bookingId ?? c.id) === selectedBookingId);
   const { data: messages, isLoading: msgsLoading } = useMessages(selectedBookingId ?? '');
   const sendMutation = useSendMessage(selectedBookingId ?? '');
+  const editMutation = useEditMessage(selectedBookingId ?? '');
+  const deleteMsgMutation = useDeleteMessage(selectedBookingId ?? '');
+  const sendImageMutation = useSendImageMessage(selectedBookingId ?? '');
   const markReadMutation = useMarkConversationRead(selectedBookingId ?? '');
 
   const [draft, setDraft] = useState('');
+  const [editingMsg, setEditingMsg] = useState<MessageDto | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+  const [replyingTo, setReplyingTo] = useState<MessageDto | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const lastConvIdRef = useRef<string | null>(null);
   const lastMsgCountRef = useRef(0);
 
   const isHost = user?.hostOnboardingStatus === 'Complete';
+
+  function handleArchive(conv: ConversationDto) {
+    archiveMutation.mutate({ id: conv.id, archive: !conv.isArchived });
+  }
+
+  function handleDelete(conv: ConversationDto) {
+    const routeId = conv.bookingId ?? conv.id;
+    deleteMutation.mutate(conv.id, {
+      onSuccess: () => {
+        if (selectedBookingId === routeId) {
+          setSelectedBookingId(null);
+          navigate('/messages', { replace: true });
+        }
+      },
+    });
+  }
+
+  function handleEditMsg(msg: MessageDto) {
+    setEditingMsg(msg);
+    setEditDraft(msg.body ?? '');
+    setTimeout(() => editTextareaRef.current?.focus(), 50);
+  }
+
+  function handleEditSubmit() {
+    const body = editDraft.trim();
+    if (!body || !editingMsg) return;
+    editMutation.mutate({ messageId: editingMsg.id, body }, {
+      onSuccess: () => { setEditingMsg(null); setEditDraft(''); },
+    });
+  }
+
+  function handleDeleteMsg(msg: MessageDto) {
+    deleteMsgMutation.mutate(msg.id);
+  }
+
+  function handleReplyMsg(msg: MessageDto) {
+    setReplyingTo(msg);
+    // Cancel editing if active
+    setEditingMsg(null);
+    setEditDraft('');
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImageFile(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+    e.target.value = '';
+  }
+
+  function clearImagePreview() {
+    setImageFile(null);
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    setImagePreviewUrl(null);
+  }
+
+  function handleImageSend() {
+    if (!imageFile || !selectedBookingId) return;
+    sendImageMutation.mutate(imageFile, {
+      onSuccess: () => {
+        clearImagePreview();
+        textareaRef.current?.focus();
+      },
+    });
+  }
 
   // Scroll to bottom: instant when switching conversation, smooth-ish when new message arrives
   useEffect(() => {
@@ -379,13 +630,14 @@ export default function MessagesPage() {
     e?.preventDefault();
     const body = draft.trim();
     if (!body || !selectedBookingId) return;
-    sendMutation.mutate({ body }, {
+    sendMutation.mutate({ body, replyToMessageId: replyingTo?.id }, {
       onSuccess: () => {
         setDraft('');
+        setReplyingTo(null);
         textareaRef.current?.focus();
       },
     });
-  }, [draft, selectedBookingId, sendMutation]);
+  }, [draft, selectedBookingId, sendMutation, replyingTo]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -419,12 +671,28 @@ export default function MessagesPage() {
         selectedBookingId && 'hidden md:flex',
       )}>
         <div className="px-5 py-4 border-b shrink-0">
-          <h1 className="text-xl font-heading font-bold">Messages</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-heading font-bold">Messages</h1>
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className={cn(
+                'flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors',
+                showArchived
+                  ? 'bg-primary/10 text-primary border-primary/30'
+                  : 'bg-muted text-muted-foreground border-border hover:text-foreground',
+              )}
+            >
+              <Archive className="h-3 w-3" />
+              {showArchived ? 'Active' : 'Archived'}
+            </button>
+          </div>
           {conversations && conversations.length > 0 && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {conversations.filter((c) => c.unreadCount > 0).length > 0
-                ? `${conversations.filter((c) => c.unreadCount > 0).length} unread`
-                : `${conversations.length} conversation${conversations.length !== 1 ? 's' : ''}`}
+              {showArchived
+                ? `${conversations.length} archived`
+                : conversations.filter((c) => c.unreadCount > 0).length > 0
+                  ? `${conversations.filter((c) => c.unreadCount > 0).length} unread`
+                  : `${conversations.length} conversation${conversations.length !== 1 ? 's' : ''}`}
             </p>
           )}
         </div>
@@ -451,6 +719,8 @@ export default function MessagesPage() {
                   isActive={selectedBookingId === (conv.bookingId ?? conv.id)}
                   onClick={() => openConversation(conv)}
                   index={i}
+                  onArchive={handleArchive}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
@@ -576,6 +846,9 @@ export default function MessagesPage() {
                                   bookingId={selectedBookingId}
                                   isHost={isHost}
                                   isAdminConversation={isAdminConv}
+                                  onEdit={handleEditMsg}
+                                  onDelete={handleDeleteMsg}
+                                  onReply={handleReplyMsg}
                                 />
                               </motion.div>
                             </AnimatePresence>
@@ -596,30 +869,134 @@ export default function MessagesPage() {
               )}
             </div>
 
-            {/* Composer */}
+            {/* Composer / Edit bar */}
             <div className="border-t bg-background px-4 py-3 shrink-0">
-              <form onSubmit={handleSend} className="flex items-end gap-2">
-                <Textarea
-                  ref={textareaRef}
-                  placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  rows={1}
-                  className="flex-1 min-h-[40px] max-h-[144px] resize-none rounded-2xl py-2.5 px-4 text-sm leading-relaxed border-border/60 focus-visible:ring-1 focus-visible:ring-ring"
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="h-10 w-10 rounded-2xl shrink-0"
-                  disabled={!draft.trim() || sendMutation.isPending}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-              <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
-                Messages are end-to-end encrypted — only you and {selectedConv.otherParty?.firstName ?? 'the other party'} can read them
-              </p>
+              {editingMsg ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Pencil className="h-3 w-3" /> Editing message</span>
+                    <button
+                      onClick={() => { setEditingMsg(null); setEditDraft(''); }}
+                      className="hover:text-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <Textarea
+                      ref={editTextareaRef}
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEditSubmit(); }
+                        if (e.key === 'Escape') { setEditingMsg(null); setEditDraft(''); }
+                      }}
+                      rows={1}
+                      className="flex-1 min-h-[40px] max-h-[144px] resize-none rounded-2xl py-2.5 px-4 text-sm leading-relaxed border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                    />
+                    <Button
+                      onClick={handleEditSubmit}
+                      size="icon"
+                      className="h-10 w-10 rounded-2xl shrink-0"
+                      disabled={!editDraft.trim() || editMutation.isPending}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Reply context bar */}
+                  {replyingTo && (
+                    <div className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-xl bg-muted/70 border border-border/60 text-xs">
+                      <Reply className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground truncate leading-none mb-0.5">
+                          {replyingTo.senderId === user?.id ? 'Yourself' : replyingTo.senderName}
+                        </p>
+                        <p className="text-muted-foreground truncate leading-snug">
+                          {replyingTo.type === 'Image' ? 'Photo' : (replyingTo.body ?? '')}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReplyingTo(null)}
+                        className="shrink-0 h-5 w-5 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+                      >
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Image preview */}
+                  {imagePreviewUrl && (
+                    <div className="relative inline-block">
+                      <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-border shadow-sm">
+                        <img src={imagePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearImagePreview}
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-foreground text-background flex items-center justify-center shadow-md hover:bg-foreground/80 transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  <form onSubmit={(e) => { e.preventDefault(); imageFile ? handleImageSend() : handleSend(); }} className="flex items-end gap-2">
+                    {/* Hidden file input */}
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                    />
+                    {/* Attach image button */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-2xl shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={!!imageFile}
+                      title="Attach image"
+                    >
+                      <Paperclip className="h-4.5 w-4.5" />
+                    </Button>
+                    {/* Text input — disabled while image is pending */}
+                    {imageFile ? (
+                      <div className="flex-1 min-h-[40px] rounded-2xl py-2.5 px-4 text-sm leading-relaxed border border-border/60 bg-muted/40 text-muted-foreground flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{imageFile.name}</span>
+                      </div>
+                    ) : (
+                      <Textarea
+                        ref={textareaRef}
+                        placeholder="Type a message… (Enter to send, Shift+Enter for new line)"
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        rows={1}
+                        className="flex-1 min-h-[40px] max-h-[144px] resize-none rounded-2xl py-2.5 px-4 text-sm leading-relaxed border-border/60 focus-visible:ring-1 focus-visible:ring-ring"
+                      />
+                    )}
+                    <Button
+                      type="submit"
+                      size="icon"
+                      className="h-10 w-10 rounded-2xl shrink-0"
+                      disabled={
+                        (!draft.trim() && !imageFile) ||
+                        sendMutation.isPending ||
+                        sendImageMutation.isPending
+                      }
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                </div>
+              )}
             </div>
           </>
         ) : (

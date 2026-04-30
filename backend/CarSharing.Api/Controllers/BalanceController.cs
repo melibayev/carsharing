@@ -36,10 +36,9 @@ public class BalanceController : ControllerBase
     public async Task<ActionResult<TopUpIntentResponse>> CreateTopUpIntent(
         [FromBody] TopUpIntentRequest request, CancellationToken ct)
     {
-        var phone = User.FindFirstValue(ClaimTypes.MobilePhone);
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
-        var result = await _balance.CreateTopUpIntentAsync(GetUserId(), request, phone, ip, ua, ct);
+        var result = await _balance.CreateTopUpIntentAsync(GetUserId(), request, ip, ua, ct);
         return Ok(result);
     }
 

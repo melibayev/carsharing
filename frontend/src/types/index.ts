@@ -356,6 +356,7 @@ export interface ConversationDto {
   otherParty: UserPublicDto | null;
   lastMessage: MessageDto | null;
   unreadCount: number;
+  isArchived: boolean;
 }
 
 export interface BookingPreviewDto {
@@ -383,10 +384,18 @@ export interface MessageDto {
   bookingPreview: BookingPreviewDto | null;
   sentAt: string;
   readAt: string | null;
+  editedAt: string | null;
+  isDeleted: boolean;
+  replyToMessageId: string | null;
+  replyToSenderName: string | null;
+  replyToBody: string | null;
+  replyToType: string | null;
+  replyToAttachmentUrl: string | null;
 }
 
 export interface SendMessageRequest {
   body: string;
+  replyToMessageId?: string;
 }
 
 // === Notification ===
@@ -842,6 +851,10 @@ export interface HostDashboardDto {
   upcomingTrips: number;
   occupancy: number;
   averageRating: number;
+  pendingApprovals: number;
+  walletBalance: number;
+  monthlyChart: Array<{ label: string; revenue: number; trips: number }>;
+  topCars: Array<{ carId: string; name: string; revenue: number; trips: number }>;
 }
 
 export interface HostCarListDto {
@@ -874,6 +887,8 @@ export interface LedgerEntryDto {
   balanceAfterUzs: number;
   description: string;
   relatedBookingId: string | null;
+  carTitle: string | null;
+  carPhotoUrl: string | null;
   createdAt: string;
 }
 
@@ -911,8 +926,9 @@ export interface AddCardIntentRequest {
   cardNumber: string;
   expMonth: number;
   expYear: number;
-  cvv: string;
+  cvv?: string;        // omitted for UzCard / Humo (no CVV on local cards)
   cardholderName: string;
+  type?: string;       // auto-detected from prefix if omitted
 }
 
 export interface AddCardIntentResponse {

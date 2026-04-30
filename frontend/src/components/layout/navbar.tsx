@@ -1,5 +1,5 @@
 ﻿import { Link, useNavigate } from 'react-router-dom';
-import { Car, Bell, LogOut, User, Shield, Moon, Sun, Search, CalendarDays, PlusCircle, MessageSquare } from 'lucide-react';
+import { Car, Bell, LogOut, User, Shield, Moon, Sun, Search, CalendarDays, PlusCircle, MessageSquare, Wallet, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -114,6 +114,14 @@ export function Navbar() {
                   <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
                     <CalendarDays className="mr-2 h-4 w-4" />
                     My Bookings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/wallet')}>
+                    <Wallet className="mr-2 h-4 w-4" />
+                    Wallet
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/profile/payment-methods')}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Payment Methods
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />

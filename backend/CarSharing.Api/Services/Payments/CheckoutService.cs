@@ -21,6 +21,7 @@ public class CheckoutService : ICheckoutService
     private readonly ILogger<CheckoutService> _logger;
 
     private const int CheckoutLockMinutes = 10;
+    private const decimal UsdToUzsRate = 12_800m;
 
     public CheckoutService(
         AppDbContext db, IBalanceService balance,
@@ -59,16 +60,16 @@ public class CheckoutService : ICheckoutService
             .OrderByDescending(m => m.IsDefault).ThenByDescending(m => m.CreatedAt)
             .ToListAsync(ct);
 
-        var totalUzs = booking.TotalChargedUsd; // "Usd" field actually stores UZS in this deployment
+        var totalUzs = booking.TotalChargedUsd * UsdToUzsRate;
 
         var breakdown = new PriceBreakdownDto
         {
-            DailyRateUzs = booking.DailyRateUsd,
+            DailyRateUzs = booking.DailyRateUsd * UsdToUzsRate,
             Days = booking.Days,
-            SubtotalUzs = booking.SubtotalUsd,
-            CleaningFeeUzs = booking.CleaningFeeUsd,
-            ServiceFeeUzs = booking.ServiceFeeUsd,
-            TaxesUzs = booking.TaxesUsd,
+            SubtotalUzs = booking.SubtotalUsd * UsdToUzsRate,
+            CleaningFeeUzs = booking.CleaningFeeUsd * UsdToUzsRate,
+            ServiceFeeUzs = booking.ServiceFeeUsd * UsdToUzsRate,
+            TaxesUzs = booking.TaxesUsd * UsdToUzsRate,
             TotalUzs = totalUzs
         };
 
@@ -119,7 +120,7 @@ public class CheckoutService : ICheckoutService
         if (booking.CheckoutLockExpiresAt is not null && booking.CheckoutLockExpiresAt < DateTimeOffset.UtcNow)
             throw new InvalidOperationException("LOCK_EXPIRED");
 
-        var totalUzs = booking.TotalChargedUsd;
+        var totalUzs = booking.TotalChargedUsd * UsdToUzsRate;
         var method = Enum.TryParse<PaymentMethod>(request.Method, out var m) ? m : throw new InvalidOperationException("Invalid payment method.");
 
         await using var tx = await _db.Database.BeginTransactionAsync(ct);

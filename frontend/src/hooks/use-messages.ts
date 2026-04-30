@@ -3,16 +3,40 @@ import api from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import type { ConversationDto, MessageDto, SendMessageRequest } from '@/types';
 
-export function useConversations() {
+export function useConversations(includeArchived = false) {
   const token = useAuthStore((s) => s.token);
   return useQuery({
-    queryKey: ['conversations'],
+    queryKey: ['conversations', includeArchived],
     queryFn: async () => {
-      const res = await api.get<ConversationDto[]>('/conversations');
+      const res = await api.get<ConversationDto[]>(`/conversations${includeArchived ? '?archived=true' : ''}`);
       return res.data;
     },
     enabled: !!token,
     refetchInterval: 10000,
+  });
+}
+
+export function useArchiveConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      await api.post(`/conversations/${id}/archive?archive=${archive}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/conversations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
   });
 }
 
@@ -33,6 +57,54 @@ export function useSendMessage(bookingId: string) {
   return useMutation({
     mutationFn: async (data: SendMessageRequest) => {
       const res = await api.post<MessageDto>(`/conversations/${bookingId}/messages`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['messages', 'unread-count'] });
+    },
+  });
+}
+
+export function useEditMessage(bookingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, body }: { messageId: string; body: string }) => {
+      const res = await api.patch<MessageDto>(`/messages/${messageId}`, { body });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+export function useDeleteMessage(bookingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      await api.delete(`/messages/${messageId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+export function useSendImageMessage(bookingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post<MessageDto>(
+        `/conversations/${bookingId}/messages/image`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
       return res.data;
     },
     onSuccess: () => {

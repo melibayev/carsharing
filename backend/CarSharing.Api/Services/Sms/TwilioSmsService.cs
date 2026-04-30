@@ -94,8 +94,9 @@ public class TwilioSmsService : ISmsService
     private static string MapTwilioError(string? code) => code switch
     {
         "21211" => "Your phone number on file looks invalid. Please update your profile.",
+        "21608" => "This phone number is not verified on the SMS provider trial account. Please verify it in the Twilio console or use a verified number.",
         "21610" => "This number stopped receiving messages from us. Contact support.",
-        "21408" => "SMS sending is not configured. Check the dev-sms.log file.",
+        "21408" => "SMS sending is not configured for this region.",
         _ => "We couldn't send the code right now. Please try again."
     };
 

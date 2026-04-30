@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useHostCars, useSnoozeCar, useUnsnoozeCar } from '@/hooks/use-host';
 import { HostCarListDto, CarStatus } from '@/types';
+import { formatUzs } from '@/lib/utils';
 
 const STATUS_BADGES: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   Listed: 'default',
@@ -88,8 +89,8 @@ export default function HostCars() {
                       {car.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right text-sm">
-                    ${car.dailyPriceUsd}
+                  <TableCell className="text-right text-sm font-mono">
+                    {formatUzs(car.dailyPriceUsd)}
                   </TableCell>
                   <TableCell className="text-right text-sm">{car.tripCount}</TableCell>
                   <TableCell className="text-right">

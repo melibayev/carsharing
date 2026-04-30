@@ -4,6 +4,7 @@ using CarSharing.Api.Data;
 using CarSharing.Api.Models.Entities;
 using CarSharing.Api.Services.Sms;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 
 namespace CarSharing.Api.Services.Payments;
@@ -39,22 +40,25 @@ public class PaymentSmsService : IPaymentSmsService
     private const int ExpiryMinutes = 5;
     private const int MaxAttempts = 5;
     private const int ResendCooldownSeconds = 60;
-    private const int MaxSendsPerDay = 5;
-    private const int MaxSendsPerHourPerIp = 30;
+    private const int MaxSendsPerDay = 20;
+    private const int MaxSendsPerHourPerIp = 60;
 
     private readonly AppDbContext _db;
     private readonly ISmsService _sms;
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<PaymentSmsService> _logger;
+    private readonly string? _devLogPath;
 
     public PaymentSmsService(
         AppDbContext db, ISmsService sms,
-        IConnectionMultiplexer redis, ILogger<PaymentSmsService> logger)
+        IConnectionMultiplexer redis, ILogger<PaymentSmsService> logger,
+        IConfiguration config)
     {
         _db = db;
         _sms = sms;
         _redis = redis;
         _logger = logger;
+        _devLogPath = config["Sms:DevLogPath"];
     }
 
     public async Task<SmsChallengeResult> IssueAsync(
@@ -113,12 +117,37 @@ public class PaymentSmsService : IPaymentSmsService
         _db.PaymentSmsChallenges.Add(challenge);
         await _db.SaveChangesAsync(ct);
 
+        // Always write to dev log if configured (ensures code is accessible in dev even if Twilio fails)
+        if (!string.IsNullOrEmpty(_devLogPath))
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(_devLogPath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                await File.AppendAllTextAsync(_devLogPath,
+                    $"[{DateTimeOffset.UtcNow:O}] to {phoneE164}: {code}\n", ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[PaymentSms] Could not write to dev log at {Path}", _devLogPath);
+            }
+        }
+
         // Send SMS
         var smsResult = await _sms.SendVerificationCodeAsync(phoneE164, code, ct);
         if (!smsResult.Success)
         {
-            _logger.LogWarning("[PaymentSms] SMS failed for user {UserId}: {Error}", userId, smsResult.ErrorMessage);
-            return new SmsChallengeResult(false, null, null, null, smsResult.ErrorMessage);
+            if (!string.IsNullOrEmpty(_devLogPath))
+            {
+                // Dev fallback: code already written to log, proceed so developer can continue
+                _logger.LogWarning("[PaymentSms] SMS failed ({Error}) — dev-log fallback active, code written to {Path}",
+                    smsResult.ErrorMessage, _devLogPath);
+            }
+            else
+            {
+                _logger.LogWarning("[PaymentSms] SMS failed for user {UserId}: {Error}", userId, smsResult.ErrorMessage);
+                return new SmsChallengeResult(false, null, null, null, smsResult.ErrorMessage);
+            }
         }
 
         // Set rate-limit counters

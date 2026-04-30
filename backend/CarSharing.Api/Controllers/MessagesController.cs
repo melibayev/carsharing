@@ -19,11 +19,25 @@ public class MessagesController : ControllerBase
     }
 
     [HttpGet("conversations")]
-    public async Task<ActionResult<List<ConversationDto>>> GetConversations()
+    public async Task<ActionResult<List<ConversationDto>>> GetConversations([FromQuery] bool archived = false)
     {
         var userId = GetUserId();
-        var conversations = await _messageService.GetConversationsAsync(userId);
+        var conversations = await _messageService.GetConversationsAsync(userId, archived);
         return Ok(conversations);
+    }
+
+    [HttpPost("conversations/{id:guid}/archive")]
+    public async Task<IActionResult> ArchiveConversation(Guid id, [FromQuery] bool archive = true)
+    {
+        await _messageService.ArchiveConversationAsync(GetUserId(), id, archive);
+        return NoContent();
+    }
+
+    [HttpDelete("conversations/{id:guid}")]
+    public async Task<IActionResult> DeleteConversation(Guid id)
+    {
+        await _messageService.DeleteConversationAsync(GetUserId(), id);
+        return NoContent();
     }
 
     [HttpGet("conversations/{bookingId:guid}/messages")]
@@ -40,7 +54,22 @@ public class MessagesController : ControllerBase
         Guid bookingId, [FromBody] SendMessageRequest request)
     {
         var userId = GetUserId();
-        var message = await _messageService.SendMessageAsync(bookingId, userId, request.Body);
+        var message = await _messageService.SendMessageAsync(bookingId, userId, request.Body, request.ReplyToMessageId);
+        return Ok(message);
+    }
+
+    [HttpPost("conversations/{bookingId:guid}/messages/image")]
+    public async Task<ActionResult<MessageDto>> SendImageMessage(Guid bookingId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No file provided.");
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("File must be an image.");
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest("Image must be under 10 MB.");
+
+        var userId = GetUserId();
+        var message = await _messageService.SendImageMessageAsync(bookingId, userId, file);
         return Ok(message);
     }
 
@@ -58,6 +87,21 @@ public class MessagesController : ControllerBase
         var userId = GetUserId();
         var count = await _messageService.GetTotalUnreadCountAsync(userId);
         return Ok(count);
+    }
+
+    [HttpPatch("messages/{messageId:guid}")]
+    public async Task<ActionResult<MessageDto>> EditMessage(
+        Guid messageId, [FromBody] EditMessageRequest request)
+    {
+        var msg = await _messageService.EditMessageAsync(messageId, GetUserId(), request.Body);
+        return Ok(msg);
+    }
+
+    [HttpDelete("messages/{messageId:guid}")]
+    public async Task<IActionResult> DeleteMessage(Guid messageId)
+    {
+        await _messageService.DeleteMessageAsync(messageId, GetUserId());
+        return NoContent();
     }
 
     /// <summary>Gets or creates a direct support conversation with the admin.</summary>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Headphones, X, Mail, Phone, MessageCircle, HelpCircle, ChevronRight, Shield, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 const FAQ = [
@@ -22,6 +23,7 @@ export default function SupportWidget() {
   const [chatLoading, setChatLoading] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleClose = () => { setOpen(false); };
 
@@ -31,6 +33,8 @@ export default function SupportWidget() {
     try {
       const res = await api.get<{ id: string; bookingId: string | null }>('/support/conversation');
       const id = res.data.bookingId ?? res.data.id;
+      // Invalidate conversations cache so MessagesPage sees the conversation immediately
+      await queryClient.invalidateQueries({ queryKey: ['conversations'] });
       setOpen(false);
       navigate(`/messages/${id}`);
     } catch {

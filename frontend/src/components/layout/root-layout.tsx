@@ -15,14 +15,17 @@ function ScrollToTop() {
 }
 
 export default function RootLayout() {
+  const { pathname } = useLocation();
+  const isMessages = pathname.startsWith('/messages');
+
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
       <Navbar />
-      <main className="flex-1 pb-14 md:pb-0">
+      <main className={isMessages ? 'flex-1 overflow-hidden' : 'flex-1 pb-14 md:pb-0'}>
         <Outlet />
       </main>
-      <Footer />
+      {!isMessages && <Footer />}
       <MobileBottomNav />
       <Toaster />
       <SupportWidget />

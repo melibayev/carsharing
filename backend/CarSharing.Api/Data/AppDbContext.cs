@@ -36,6 +36,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
     public DbSet<PaymentSmsChallenge> PaymentSmsChallenges => Set<PaymentSmsChallenge>();
     public DbSet<Receipt> Receipts => Set<Receipt>();
     public DbSet<TopUpIntent> TopUpIntents => Set<TopUpIntent>();
+    public DbSet<UserConversationState> UserConversationStates => Set<UserConversationState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

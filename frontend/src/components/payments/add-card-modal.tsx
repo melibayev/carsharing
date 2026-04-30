@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAddCardIntent, useConfirmCard, useResendCardSms } from '@/hooks/use-payments';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +17,23 @@ interface Props {
 }
 
 type Step = 'card-details' | 'otp';
+
+// Detect card brand and type from the card number prefix
+function detectBrand(digits: string): { brand: string; isLocal: boolean; type: string } {
+  if (digits.startsWith('8600')) return { brand: 'Uzcard', isLocal: true, type: 'UzcardCard' };
+  if (digits.startsWith('9860')) return { brand: 'Humo',   isLocal: true, type: 'HumoCard' };
+  if (digits.startsWith('4'))   return { brand: 'Visa',   isLocal: false, type: 'VisaMasterCard' };
+  if (digits.startsWith('5') || digits.startsWith('2'))
+    return { brand: 'Mastercard', isLocal: false, type: 'VisaMasterCard' };
+  return { brand: '', isLocal: false, type: 'VisaMasterCard' };
+}
+
+const BRAND_COLORS: Record<string, string> = {
+  Visa:       'bg-blue-600',
+  Mastercard: 'bg-orange-600',
+  Uzcard:     'bg-green-600',
+  Humo:       'bg-purple-600',
+};
 
 export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
   const { toast } = useToast();
@@ -32,6 +50,10 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
   const [maskedCard, setMaskedCard] = useState('');
   const [phoneHint, setPhoneHint] = useState('');
   const [otp, setOtp] = useState('');
+
+  // Derived: compute card brand live from the number the user is typing
+  const digits = cardNumber.replace(/\s/g, '');
+  const { brand, isLocal, type } = detectBrand(digits);
 
   const resetForm = () => {
     setStep('card-details');
@@ -54,19 +76,30 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
     val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
 
   const formatExpiry = (val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 4);
-    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
+    const d = val.replace(/\D/g, '').slice(0, 4);
+    if (d.length >= 3) return `${d.slice(0, 2)}/${d.slice(2)}`;
+    return d;
   };
 
   const handleCardSubmit = async () => {
-    const digits = cardNumber.replace(/\s/g, '');
     const [expMonthStr, expYearStr] = expiry.split('/');
     const expMonth = parseInt(expMonthStr ?? '0', 10);
     const expYear = parseInt('20' + (expYearStr ?? '0'), 10);
 
-    if (digits.length < 13 || !expMonth || !expYear || cvv.length < 3 || !cardholderName.trim()) {
-      toast({ title: 'Please fill all fields correctly.', variant: 'destructive' });
+    if (digits.length < 16) {
+      toast({ title: 'Enter a valid 16-digit card number.', variant: 'destructive' });
+      return;
+    }
+    if (!expMonth || !expYear) {
+      toast({ title: 'Enter a valid expiry date (MM/YY).', variant: 'destructive' });
+      return;
+    }
+    if (!isLocal && cvv.length < 3) {
+      toast({ title: 'Enter the CVV (3–4 digits on the back of the card).', variant: 'destructive' });
+      return;
+    }
+    if (!cardholderName.trim()) {
+      toast({ title: 'Enter the cardholder name.', variant: 'destructive' });
       return;
     }
 
@@ -75,8 +108,9 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
         cardNumber: digits,
         expMonth,
         expYear,
-        cvv,
+        cvv: isLocal ? undefined : cvv,
         cardholderName: cardholderName.trim(),
+        type,
       });
       setMethodId(res.paymentMethodId);
       setMaskedCard(res.maskedCard);
@@ -120,15 +154,23 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
           <DialogTitle>{step === 'card-details' ? 'Add card' : 'Verify phone'}</DialogTitle>
           <DialogDescription>
             {step === 'card-details'
-              ? 'Enter your card details to save it to your account.'
-              : `We sent a 6-digit code to ${phoneHint}. Enter it below to verify.`}
+              ? 'Enter your card details to link it to your account.'
+              : `We sent a 6-digit code to ${phoneHint || 'your phone'}. Enter it below to verify.`}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'card-details' ? (
           <div className="space-y-4">
+            {/* Card number with live brand badge */}
             <div className="space-y-1">
-              <Label>Card number</Label>
+              <div className="flex items-center justify-between">
+                <Label>Card number</Label>
+                {brand && (
+                  <Badge className={`text-white text-xs ${BRAND_COLORS[brand] ?? 'bg-muted'}`}>
+                    {brand}
+                  </Badge>
+                )}
+              </div>
               <Input
                 inputMode="numeric"
                 placeholder="1234 5678 9012 3456"
@@ -136,8 +178,15 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
                 onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
                 maxLength={19}
               />
+              {isLocal && (
+                <p className="text-xs text-muted-foreground">
+                  {brand} card — no CVV required
+                </p>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Expiry + CVV (CVV hidden for UzCard / Humo) */}
+            <div className={isLocal ? '' : 'grid grid-cols-2 gap-3'}>
               <div className="space-y-1">
                 <Label>Expiry</Label>
                 <Input
@@ -148,18 +197,21 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
                   maxLength={5}
                 />
               </div>
-              <div className="space-y-1">
-                <Label>CVV</Label>
-                <Input
-                  inputMode="numeric"
-                  placeholder="123"
-                  type="password"
-                  value={cvv}
-                  onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  maxLength={4}
-                />
-              </div>
+              {!isLocal && (
+                <div className="space-y-1">
+                  <Label>CVV</Label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="123"
+                    type="password"
+                    value={cvv}
+                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    maxLength={4}
+                  />
+                </div>
+              )}
             </div>
+
             <div className="space-y-1">
               <Label>Cardholder name</Label>
               <Input
@@ -171,7 +223,14 @@ export default function AddCardModal({ open, onOpenChange, onAdded }: Props) {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Card: {maskedCard}</p>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted text-sm">
+              <span className="font-medium">{maskedCard}</span>
+              {brand && (
+                <Badge className={`text-white text-xs ml-auto ${BRAND_COLORS[brand] ?? 'bg-muted'}`}>
+                  {brand}
+                </Badge>
+              )}
+            </div>
             <div className="space-y-1">
               <Label>Verification code</Label>
               <Input

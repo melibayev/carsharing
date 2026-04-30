@@ -11,6 +11,9 @@ import type {
   VinAvailableResponse,
   HostDashboardDto,
   HostCarListDto,
+  AccountBalanceDto,
+  LedgerEntryDto,
+  PagedResult,
 } from '@/types';
 
 // ── Eligibility ───────────────────────────────────────────────────────────────
@@ -227,5 +230,29 @@ export function useHostDashboard() {
       return res.data;
     },
     staleTime: 60_000,
+  });
+}
+
+export function useHostWallet() {
+  return useQuery({
+    queryKey: ['host', 'wallet'],
+    queryFn: async () => {
+      const res = await api.get<AccountBalanceDto>('/host/wallet');
+      return res.data;
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useHostLedger(page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ['host', 'wallet', 'ledger', page],
+    queryFn: async () => {
+      const res = await api.get<PagedResult<LedgerEntryDto>>('/host/wallet/ledger', {
+        params: { page, pageSize },
+      });
+      return res.data;
+    },
+    staleTime: 30_000,
   });
 }

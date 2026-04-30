@@ -423,7 +423,7 @@ export default function HomePage() {
             <div className="hidden md:flex justify-center">
               <div className="grid grid-cols-2 gap-4 text-white/90">
                 {[
-                  { value: '$3,000', label: 'Avg monthly earnings' },
+                  { value: '3,000,000 UZS', label: 'Avg monthly earnings' },
                   { value: '85%', label: 'Host payout rate' },
                   { value: '24h', label: 'Avg first booking' },
                   { value: '4.8', label: 'Host satisfaction' },

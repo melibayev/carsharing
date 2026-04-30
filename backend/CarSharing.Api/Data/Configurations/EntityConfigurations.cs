@@ -170,6 +170,10 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.HasOne(m => m.Booking).WithMany().HasForeignKey(m => m.BookingId).OnDelete(DeleteBehavior.SetNull);
         builder.HasIndex(m => new { m.ConversationId, m.SentAt });
         builder.HasIndex(m => m.BookingId);
+        builder.Property(m => m.IsDeleted).HasDefaultValue(false);
+        builder.Property(m => m.EditedAt).IsRequired(false);
+        builder.HasOne(m => m.ReplyToMessage).WithMany()
+            .HasForeignKey(m => m.ReplyToMessageId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -511,6 +515,17 @@ public class TopUpIntentConfiguration : IEntityTypeConfiguration<TopUpIntent>
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(t => new { t.UserId, t.CreatedAt });
+    }
+}
+
+public class UserConversationStateConfiguration : IEntityTypeConfiguration<UserConversationState>
+{
+    public void Configure(EntityTypeBuilder<UserConversationState> builder)
+    {
+        builder.HasKey(s => new { s.UserId, s.ConversationId });
+        builder.HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(s => s.Conversation).WithMany().HasForeignKey(s => s.ConversationId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasIndex(s => s.ConversationId);
     }
 }
 

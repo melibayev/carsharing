@@ -9,7 +9,7 @@ public interface IBalanceService
     Task<AccountBalanceDto> GetBalanceAsync(Guid userId, CancellationToken ct = default);
     Task<PagedResult<LedgerEntryDto>> GetLedgerAsync(Guid userId, int page, int pageSize, CancellationToken ct = default);
 
-    Task<TopUpIntentResponse> CreateTopUpIntentAsync(Guid userId, TopUpIntentRequest request, string? phoneE164, string? ipAddress, string? userAgent, CancellationToken ct = default);
+    Task<TopUpIntentResponse> CreateTopUpIntentAsync(Guid userId, TopUpIntentRequest request, string? ipAddress, string? userAgent, CancellationToken ct = default);
     Task ConfirmTopUpAsync(Guid userId, ConfirmTopUpRequest request, CancellationToken ct = default);
 
     /// <summary>Lock funds for a booking. Throws if insufficient.</summary>
@@ -23,6 +23,9 @@ public interface IBalanceService
 
     /// <summary>Credit a refund back to the user's balance.</summary>
     Task CreditRefundAsync(Guid userId, decimal amountUzs, Guid bookingId, Guid paymentId, CancellationToken ct = default);
+
+    /// <summary>Credit host earning after a trip is completed.</summary>
+    Task CreditHostEarningAsync(Guid hostId, decimal amountUzs, Guid bookingId, Guid? paymentId, CancellationToken ct = default);
 
     /// <summary>Admin: adjust balance with audit trail.</summary>
     Task AdminAdjustAsync(Guid userId, decimal amountUzs, string direction, string reason, Guid adminId, CancellationToken ct = default);

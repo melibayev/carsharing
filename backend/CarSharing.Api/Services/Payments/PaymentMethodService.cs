@@ -9,9 +9,9 @@ namespace CarSharing.Api.Services.Payments;
 public interface IPaymentMethodService
 {
     Task<List<UserPaymentMethodDto>> GetMethodsAsync(Guid userId, CancellationToken ct = default);
-    Task<AddCardIntentResponse> CreateAddCardIntentAsync(Guid userId, AddCardIntentRequest request, string? phoneE164, string? ipAddress, string? userAgent, CancellationToken ct = default);
+    Task<AddCardIntentResponse> CreateAddCardIntentAsync(Guid userId, AddCardIntentRequest request, string? ipAddress, string? userAgent, CancellationToken ct = default);
     Task<UserPaymentMethodDto> ConfirmAddCardAsync(Guid userId, ConfirmCardRequest request, CancellationToken ct = default);
-    Task<SmsChallengeResult> ResendSmsAsync(Guid userId, ResendCardSmsRequest request, string? phoneE164, string? ipAddress, string? userAgent, CancellationToken ct = default);
+    Task<SmsChallengeResult> ResendSmsAsync(Guid userId, ResendCardSmsRequest request, string? ipAddress, string? userAgent, CancellationToken ct = default);
     Task SetDefaultAsync(Guid userId, Guid methodId, CancellationToken ct = default);
     Task DeleteAsync(Guid userId, Guid methodId, CancellationToken ct = default);
 }
@@ -43,8 +43,12 @@ public class PaymentMethodService : IPaymentMethodService
 
     public async Task<AddCardIntentResponse> CreateAddCardIntentAsync(
         Guid userId, AddCardIntentRequest request,
-        string? phoneE164, string? ipAddress, string? userAgent, CancellationToken ct = default)
+        string? ipAddress, string? userAgent, CancellationToken ct = default)
     {
+        var phoneE164 = await _db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.PhoneNumber)
+            .FirstOrDefaultAsync(ct);
         // Check card cap
         var activeCount = await _db.UserPaymentMethods
             .CountAsync(m => m.UserId == userId && m.IsActive && m.DeletedAt == null, ct);
@@ -57,11 +61,14 @@ public class PaymentMethodService : IPaymentMethodService
         var token = TokenizeCard(request.CardNumber);
         var (brand, last4) = DetectBrand(request.CardNumber);
 
+        // Auto-detect or validates type
+        var cardType = ResolveType(request.Type, request.CardNumber);
+
         // Create pending method (IsActive=false until SMS confirmed)
         var method = new UserPaymentMethod
         {
             UserId = userId,
-            Type = Enum.Parse<PaymentMethodType>(request.Type),
+            Type = cardType,
             Brand = brand,
             Last4 = last4,
             ExpMonth = request.ExpMonth,
@@ -89,7 +96,9 @@ public class PaymentMethodService : IPaymentMethodService
 
         return new AddCardIntentResponse
         {
-            PendingId = method.Id,
+            PaymentMethodId = method.Id,
+            MaskedCard = $"•••• {last4}",
+            PhoneHint = MaskPhone(phoneE164),
             Last4 = last4,
             Brand = brand,
             SmsExpiresAt = smsResult.ExpiresAt ?? DateTimeOffset.UtcNow.AddMinutes(5),
@@ -101,7 +110,7 @@ public class PaymentMethodService : IPaymentMethodService
         Guid userId, ConfirmCardRequest request, CancellationToken ct = default)
     {
         var method = await _db.UserPaymentMethods
-            .FirstOrDefaultAsync(m => m.Id == request.PendingId && m.UserId == userId, ct);
+            .FirstOrDefaultAsync(m => m.Id == request.PaymentMethodId && m.UserId == userId, ct);
 
         if (method is null || method.DeletedAt != null)
             throw new InvalidOperationException("Pending card not found.");
@@ -109,7 +118,7 @@ public class PaymentMethodService : IPaymentMethodService
             throw new InvalidOperationException("Card is already confirmed.");
 
         var purposeKey = $"add-card:{method.Id}";
-        var result = await _sms.VerifyAsync(userId, purposeKey, request.SmsCode, ct);
+        var result = await _sms.VerifyAsync(userId, purposeKey, request.Code, ct);
         if (!result.Succeeded)
             throw new InvalidOperationException(result.ErrorMessage ?? "Invalid code.");
 
@@ -123,10 +132,14 @@ public class PaymentMethodService : IPaymentMethodService
 
     public async Task<SmsChallengeResult> ResendSmsAsync(
         Guid userId, ResendCardSmsRequest request,
-        string? phoneE164, string? ipAddress, string? userAgent, CancellationToken ct = default)
+        string? ipAddress, string? userAgent, CancellationToken ct = default)
     {
+        var phoneE164 = await _db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.PhoneNumber)
+            .FirstOrDefaultAsync(ct);
         var method = await _db.UserPaymentMethods
-            .FirstOrDefaultAsync(m => m.Id == request.PendingId && m.UserId == userId && !m.IsActive, ct);
+            .FirstOrDefaultAsync(m => m.Id == request.PaymentMethodId && m.UserId == userId && !m.IsActive, ct);
 
         if (method is null)
             throw new InvalidOperationException("Pending card not found.");
@@ -185,18 +198,38 @@ public class PaymentMethodService : IPaymentMethodService
         var last4 = digits.Length >= 4 ? digits[^4..] : digits.PadLeft(4, '0');
 
         string brand;
-        if (digits.StartsWith("4"))
-            brand = "Visa";
-        else if (digits.StartsWith("5") || digits.StartsWith("2"))
-            brand = "Mastercard";
-        else if (digits.StartsWith("8600") || digits.StartsWith("9860"))
+        if (digits.StartsWith("8600"))
             brand = "Uzcard";
         else if (digits.StartsWith("9860"))
             brand = "Humo";
+        else if (digits.StartsWith("4"))
+            brand = "Visa";
+        else if (digits.StartsWith("5") || digits.StartsWith("2"))
+            brand = "Mastercard";
         else
             brand = "Unknown";
 
         return (brand, last4);
+    }
+
+    private static PaymentMethodType ResolveType(string? requestedType, string cardNumber)
+    {
+        if (!string.IsNullOrEmpty(requestedType) &&
+            Enum.TryParse<PaymentMethodType>(requestedType, out var parsed))
+            return parsed;
+
+        var digits = new string(cardNumber.Where(char.IsDigit).ToArray());
+        if (digits.StartsWith("8600")) return PaymentMethodType.UzcardCard;
+        if (digits.StartsWith("9860")) return PaymentMethodType.HumoCard;
+        return PaymentMethodType.VisaMasterCard;
+    }
+
+    private static string MaskPhone(string? phone)
+    {
+        if (string.IsNullOrEmpty(phone)) return "";
+        return phone.Length > 4
+            ? phone[..^4].Aggregate("", (a, c) => a + (char.IsDigit(c) ? '•' : c)) + phone[^4..]
+            : phone;
     }
 
     private static void ValidateCard(AddCardIntentRequest request)
@@ -215,8 +248,14 @@ public class PaymentMethodService : IPaymentMethodService
         if (request.ExpYear < now.Year || (request.ExpYear == now.Year && request.ExpMonth < now.Month))
             throw new InvalidOperationException("Card has expired.");
 
-        if (request.Cvv.Length < 3 || request.Cvv.Length > 4 || !request.Cvv.All(char.IsDigit))
-            throw new InvalidOperationException("Invalid CVV.");
+        // UzCard (8600) and Humo (9860) are local Uzbek cards that have no CVV
+        var isLocalCard = digits.StartsWith("8600") || digits.StartsWith("9860");
+        if (!isLocalCard)
+        {
+            var cvv = request.Cvv ?? "";
+            if (cvv.Length < 3 || cvv.Length > 4 || !cvv.All(char.IsDigit))
+                throw new InvalidOperationException("Invalid CVV.");
+        }
 
         if (string.IsNullOrWhiteSpace(request.CardholderName) || request.CardholderName.Length < 2 || request.CardholderName.Length > 50)
             throw new InvalidOperationException("Cardholder name must be 2-50 characters.");

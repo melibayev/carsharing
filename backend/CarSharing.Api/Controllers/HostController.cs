@@ -28,6 +28,7 @@ public class HostController : ControllerBase
     private readonly IPaymentService _paymentService;
     private readonly IPhotoStorage _photoStorage;
     private readonly INotificationService _notifications;
+    private readonly IBalanceService _balance;
     private readonly IDataProtector _protector;
 
     public HostController(
@@ -38,6 +39,7 @@ public class HostController : ControllerBase
         IPaymentService paymentService,
         IPhotoStorage photoStorage,
         INotificationService notifications,
+        IBalanceService balance,
         IDataProtectionProvider dataProtectionProvider)
     {
         _db = db;
@@ -47,6 +49,7 @@ public class HostController : ControllerBase
         _paymentService = paymentService;
         _photoStorage = photoStorage;
         _notifications = notifications;
+        _balance = balance;
         _protector = dataProtectionProvider.CreateProtector("HostPayoutSecrets");
     }
 
@@ -541,38 +544,46 @@ public class HostController : ControllerBase
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
+        var hostId = CurrentUserId;
         var now = DateTimeOffset.UtcNow;
         var startOfMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var startOfLastMonth = startOfMonth.AddMonths(-1);
 
-        var completedBookings = await _db.Bookings
+        // Include all non-cancelled, non-rejected bookings for revenue reporting
+        // (host is credited at approval time, not only when trip ends)
+        var activeStatuses = new[] {
+            BookingStatus.Confirmed, BookingStatus.InProgress, BookingStatus.Completed
+        };
+        var allActive = await _db.Bookings
             .Include(b => b.Car)
-            .Where(b => b.Car.OwnerId == CurrentUserId && b.Status == BookingStatus.Completed)
+            .Where(b => b.Car.OwnerId == hostId && activeStatuses.Contains(b.Status))
             .ToListAsync();
 
-        var thisMonthRevenue = completedBookings
-            .Where(b => b.CompletedAt >= startOfMonth)
+        // Use ConfirmedAt as the revenue date (when money was actually transferred)
+        var thisMonthRevenue = allActive
+            .Where(b => (b.ConfirmedAt ?? b.CreatedAt) >= startOfMonth)
             .Sum(b => b.HostPayoutUsd);
 
-        var lastMonthRevenue = completedBookings
-            .Where(b => b.CompletedAt >= startOfLastMonth && b.CompletedAt < startOfMonth)
+        var lastMonthRevenue = allActive
+            .Where(b => (b.ConfirmedAt ?? b.CreatedAt) >= startOfLastMonth
+                     && (b.ConfirmedAt ?? b.CreatedAt) < startOfMonth)
             .Sum(b => b.HostPayoutUsd);
 
         var upcomingTrips = await _db.Bookings
             .Include(b => b.Car)
-            .CountAsync(b => b.Car.OwnerId == CurrentUserId &&
+            .CountAsync(b => b.Car.OwnerId == hostId &&
                 b.Status == BookingStatus.Confirmed &&
                 b.StartUtc >= now);
 
         var myCars = await _db.Cars
-            .Where(c => c.OwnerId == CurrentUserId && c.Status == CarStatus.Listed)
+            .Where(c => c.OwnerId == hostId && c.Status == CarStatus.Listed)
             .CountAsync();
 
         var thirtyDaysAgo = now.AddDays(-30);
         var totalDays = myCars * 30;
         var bookedDays = await _db.Bookings
             .Include(b => b.Car)
-            .Where(b => b.Car.OwnerId == CurrentUserId &&
+            .Where(b => b.Car.OwnerId == hostId &&
                 b.Status != BookingStatus.Rejected &&
                 b.Status != BookingStatus.CancelledByGuest &&
                 b.Status != BookingStatus.CancelledByHost &&
@@ -583,17 +594,109 @@ public class HostController : ControllerBase
 
         var avgRating = await _db.Reviews
             .Include(r => r.Car)
-            .Where(r => r.Car != null && r.Car.OwnerId == CurrentUserId && r.AuthorRole == ReviewAuthorRole.Guest)
+            .Where(r => r.Car != null && r.Car.OwnerId == hostId && r.AuthorRole == ReviewAuthorRole.Guest)
             .AverageAsync(r => (double?)r.Rating) ?? 0;
+
+        // Monthly revenue for the last 6 months
+        var sixMonthsAgo = startOfMonth.AddMonths(-5);
+        var monthlyRevenue = allActive
+            .Where(b => (b.ConfirmedAt ?? b.CreatedAt) >= sixMonthsAgo)
+            .GroupBy(b => new
+            {
+                (b.ConfirmedAt ?? b.CreatedAt).Year,
+                (b.ConfirmedAt ?? b.CreatedAt).Month
+            })
+            .Select(g => new
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                Revenue = g.Sum(b => b.HostPayoutUsd),
+                Trips = g.Count()
+            })
+            .OrderBy(g => g.Year).ThenBy(g => g.Month)
+            .ToList();
+
+        // Fill missing months with zero
+        var monthlyChart = Enumerable.Range(0, 6)
+            .Select(i => startOfMonth.AddMonths(-5 + i))
+            .Select(m =>
+            {
+                var entry = monthlyRevenue.FirstOrDefault(x => x.Year == m.Year && x.Month == m.Month);
+                return new
+                {
+                    Label = m.ToString("MMM"),
+                    Revenue = entry?.Revenue ?? 0m,
+                    Trips = entry?.Trips ?? 0
+                };
+            })
+            .ToList();
+
+        // Top cars by revenue
+        var topCars = allActive
+            .GroupBy(b => b.Car)
+            .Select(g => new
+            {
+                CarId = g.Key.Id,
+                Name = $"{g.Key.Year} {g.Key.Make} {g.Key.Model}",
+                Revenue = g.Sum(b => b.HostPayoutUsd),
+                Trips = g.Count()
+            })
+            .OrderByDescending(c => c.Revenue)
+            .Take(5)
+            .ToList();
+
+        // Wallet balance
+        var walletBalance = await _db.AccountBalances
+            .Where(b => b.UserId == hostId)
+            .Select(b => new { b.AvailableUzs, b.LockedUzs })
+            .FirstOrDefaultAsync();
+
+        // Pending bookings count
+        var pendingApprovals = await _db.Bookings
+            .Include(b => b.Car)
+            .CountAsync(b => b.Car.OwnerId == hostId && b.Status == BookingStatus.PendingApproval);
+
+        const decimal usdToUzs = 12_800m;
 
         return Ok(new
         {
-            RevenueThisMonth = thisMonthRevenue,
-            LastMonthRevenue = lastMonthRevenue,
+            RevenueThisMonth = thisMonthRevenue * usdToUzs,
+            LastMonthRevenue = lastMonthRevenue * usdToUzs,
             UpcomingTrips = upcomingTrips,
             Occupancy = Math.Round(occupancy, 1),
             AverageRating = Math.Round(avgRating, 2),
+            PendingApprovals = pendingApprovals,
+            WalletBalance = walletBalance?.AvailableUzs ?? 0m,
+            MonthlyChart = monthlyChart.Select(m => new
+            {
+                m.Label,
+                Revenue = m.Revenue * usdToUzs,
+                m.Trips
+            }),
+            TopCars = topCars.Select(c => new
+            {
+                c.CarId,
+                c.Name,
+                Revenue = c.Revenue * usdToUzs,
+                c.Trips
+            }),
         });
+    }
+
+    // ─── Host Wallet ─────────────────────────────────────────────────────────
+
+    [HttpGet("wallet")]
+    public async Task<IActionResult> GetWallet()
+    {
+        var balance = await _balance.GetBalanceAsync(CurrentUserId);
+        return Ok(balance);
+    }
+
+    [HttpGet("wallet/ledger")]
+    public async Task<IActionResult> GetWalletLedger([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var ledger = await _balance.GetLedgerAsync(CurrentUserId, page, pageSize);
+        return Ok(ledger);
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────

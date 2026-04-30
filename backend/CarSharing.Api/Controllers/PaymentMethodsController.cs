@@ -29,10 +29,9 @@ public class PaymentMethodsController : ControllerBase
     public async Task<ActionResult<AddCardIntentResponse>> CreateIntent(
         [FromBody] AddCardIntentRequest request, CancellationToken ct)
     {
-        var phone = User.FindFirstValue(ClaimTypes.MobilePhone);
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
-        var result = await _paymentMethods.CreateAddCardIntentAsync(GetUserId(), request, phone, ip, ua, ct);
+        var result = await _paymentMethods.CreateAddCardIntentAsync(GetUserId(), request, ip, ua, ct);
         return Ok(result);
     }
 
@@ -48,10 +47,9 @@ public class PaymentMethodsController : ControllerBase
     public async Task<IActionResult> ResendSms(
         [FromBody] ResendCardSmsRequest request, CancellationToken ct)
     {
-        var phone = User.FindFirstValue(ClaimTypes.MobilePhone);
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var ua = Request.Headers.UserAgent.ToString();
-        await _paymentMethods.ResendSmsAsync(GetUserId(), request, phone, ip, ua, ct);
+        await _paymentMethods.ResendSmsAsync(GetUserId(), request, ip, ua, ct);
         return Ok(new { message = "SMS sent." });
     }
 

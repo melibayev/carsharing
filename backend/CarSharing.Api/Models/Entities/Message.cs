@@ -30,4 +30,8 @@ public class Message : AuditableEntity
     public Booking? Booking { get; set; }
     public DateTimeOffset SentAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ReadAt { get; set; }
+    public DateTimeOffset? EditedAt { get; set; }
+    public bool IsDeleted { get; set; }  // soft delete — one-side only (sender's action)
+    public Guid? ReplyToMessageId { get; set; }
+    public Message? ReplyToMessage { get; set; }
 }

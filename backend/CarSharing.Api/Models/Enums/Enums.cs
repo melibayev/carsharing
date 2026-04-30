@@ -158,7 +158,8 @@ public enum LedgerEntryType
     RefundCredit,
     PayoutDebit,
     AdjustmentCredit,
-    AdjustmentDebit
+    AdjustmentDebit,
+    HostEarning
 }
 
 public enum PayoutStatus

@@ -16,6 +16,7 @@ public class BookingService : IBookingService
     private readonly IPricingService _pricingService;
     private readonly IAvailabilityService _availabilityService;
     private readonly IPaymentService _paymentService;
+    private readonly IBalanceService _balanceService;
     private readonly INotificationService _notificationService;
     private readonly IMapper _mapper;
     private readonly ILogger<BookingService> _logger;
@@ -25,6 +26,7 @@ public class BookingService : IBookingService
         IPricingService pricingService,
         IAvailabilityService availabilityService,
         IPaymentService paymentService,
+        IBalanceService balanceService,
         INotificationService notificationService,
         IMapper mapper,
         ILogger<BookingService> logger)
@@ -33,6 +35,7 @@ public class BookingService : IBookingService
         _pricingService = pricingService;
         _availabilityService = availabilityService;
         _paymentService = paymentService;
+        _balanceService = balanceService;
         _notificationService = notificationService;
         _mapper = mapper;
         _logger = logger;
@@ -224,6 +227,32 @@ public class BookingService : IBookingService
 
         await _db.SaveChangesAsync();
 
+        // Capture payment and credit host immediately on approval — don't wait for trip end
+        var payment = await _db.Payments
+            .Where(p => p.BookingId == bookingId && p.Status == PaymentStatus.Authorized)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (payment != null && booking.HostPayoutUsd > 0)
+        {
+            const decimal usdToUzs = 12_800m;
+
+            if (payment.Method == PaymentMethod.AccountBalance)
+            {
+                await _balanceService.CaptureFundsAsync(
+                    booking.GuestId, booking.TotalChargedUsd * usdToUzs, booking.Id, payment.Id);
+            }
+            else
+            {
+                payment.Status = PaymentStatus.Captured;
+                payment.CapturedAt = DateTimeOffset.UtcNow;
+                await _db.SaveChangesAsync();
+            }
+
+            await _balanceService.CreditHostEarningAsync(
+                booking.Car.OwnerId, booking.HostPayoutUsd * usdToUzs, booking.Id, payment.Id);
+        }
+
         await _notificationService.CreateAsync(booking.GuestId, NotificationType.BookingConfirmed,
             "Booking Confirmed!",
             $"Your booking for {booking.Car.Year} {booking.Car.Make} {booking.Car.Model} has been confirmed.",
@@ -366,10 +395,30 @@ public class BookingService : IBookingService
             booking.CheckOutPhotos = JsonSerializer.Serialize(request.PhotoUrls);
         }
 
-        // Capture payment
+        // Capture payment (card authorizations)
         if (booking.PaymentIntentId != null)
         {
             await _paymentService.CaptureAsync(booking.PaymentIntentId, booking.TotalChargedUsd);
+        }
+
+        // Credit host wallet only if not already credited at approval time
+        var alreadyCredited = await _db.LedgerEntries
+            .AnyAsync(e => e.RelatedBookingId == booking.Id
+                           && e.UserId == booking.Car.OwnerId
+                           && e.Type == LedgerEntryType.HostEarning);
+
+        if (!alreadyCredited && booking.HostPayoutUsd > 0)
+        {
+            const decimal usdToUzs = 12_800m;
+            var payment = await _db.Payments
+                .Where(p => p.BookingId == booking.Id)
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync();
+            await _balanceService.CreditHostEarningAsync(
+                booking.Car.OwnerId,
+                booking.HostPayoutUsd * usdToUzs,
+                booking.Id,
+                payment?.Id);
         }
 
         // Update trip counts

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Car, Calendar, Star, MessageSquare, ChevronLeft, Loader2 } from 'lucide-react';
+import { Car, Calendar, Star, MessageSquare, ChevronLeft, Loader2, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -238,6 +238,13 @@ export default function BookingDetailPage() {
             </Button>
             <Button variant="destructive" onClick={() => setShowReject(true)}>Reject</Button>
           </>
+        )}
+        {/* Guest: Pay Now when booking is waiting for payment */}
+        {isGuest && booking.status === BookingStatus.PendingApproval && (
+          <Button onClick={() => navigate(`/bookings/${booking.id}/checkout`)}>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Pay Now
+          </Button>
         )}
         {isHost && booking.status === BookingStatus.Confirmed && (
           <Button onClick={() => { setOdometerKm(''); setShowCheckIn(true); }}>Check In</Button>
