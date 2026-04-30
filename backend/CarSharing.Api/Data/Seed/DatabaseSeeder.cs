@@ -36,7 +36,6 @@ public class DatabaseSeeder
         if (await _db.Users.AnyAsync())
         {
             _logger.LogInformation("Database already seeded. Skipping.");
-            await SeedPaymentsAsync();
             return;
         }
 
@@ -46,20 +45,8 @@ public class DatabaseSeeder
         await SeedFeaturesAsync();
         await SeedSystemUserAsync();
         await SeedSpecialAccountsAsync();
-        await SeedRegularUsersAsync();
-        await SeedCarsAsync();
-        await SeedBookingsAsync();
-        await SeedReviewsAsync();
-        await SeedConversationsAsync();
-        await SeedNotificationsAsync();
-        await SeedKycVerificationsAsync();
-        await SeedDisputesAsync();
-        await SeedOnboardingUsersAsync();
-        await SeedHostUsersAsync();
-        await SeedPaymentsAsync();
 
-        _logger.LogInformation("Database seeding completed. {UserCount} users, {CarCount} cars, {BookingCount} bookings.",
-            _users.Count, _cars.Count, _bookings.Count);
+        _logger.LogInformation("Database seeding completed: roles, features, and 3 demo accounts created.");
     }
 
     private async Task SeedRolesAsync()
