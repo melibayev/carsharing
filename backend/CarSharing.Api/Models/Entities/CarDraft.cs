@@ -74,4 +74,5 @@ public class CarDraft : AuditableEntity
     public string? CustomRules { get; set; }
     public bool IsInstantBook { get; set; }
     public string? Description { get; set; }
+    public string? FeaturesJson { get; set; }
 }

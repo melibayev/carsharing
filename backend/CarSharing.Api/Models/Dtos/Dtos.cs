@@ -140,6 +140,47 @@ public record UpdateCarRequest(
     string? AddressLine, string? City, string? Region, string? Country, string? PostalCode,
     string? Description, string? Rules, bool? IsInstantBook, List<string>? Features);
 
+/// <summary>Host-facing PATCH payload — prices in UZS for ease of use.</summary>
+public record HostPatchCarRequest(
+    // Vehicle identity
+    string? Make,
+    string? Model,
+    int? Year,
+    string? Trim,
+    string? Transmission,
+    string? BodyType,
+    string? FuelType,
+    int? Seats,
+    int? Doors,
+    // Pricing
+    decimal? DailyPriceUzs,
+    int? WeeklyDiscountPercent,
+    int? MonthlyDiscountPercent,
+    decimal? CleaningFeeUzs,
+    decimal? SecurityDepositUzs,
+    int? MinTripDays,
+    int? MaxTripDays,
+    int? AdvanceNoticeHours,
+    int? DailyMileageLimitKm,
+    decimal? ExtraKmFeeUzs,
+    // Details
+    string? Description,
+    string? Rules,
+    bool? IsInstantBook,
+    string? Color,
+    int? OdometerKm,
+    // Location
+    string? AddressLine,
+    string? City,
+    double? Lat,
+    double? Lng,
+    int? PrivacyRadiusMeters,
+    bool? CanDeliverToAirports,
+    bool? SelfCheckInAvailable,
+    bool? GpsTrackerInstalled,
+    // Features
+    List<string>? Features);
+
 public class CarPhotoDto
 {
     public Guid Id { get; set; }
@@ -378,6 +419,7 @@ public class CarDraftDto
     public string? CustomRules { get; set; }
     public bool IsInstantBook { get; set; }
     public string? Description { get; set; }
+    public List<string>? Features { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -396,7 +438,8 @@ public record PatchDraftRequest(
     decimal? DailyPriceUzs, int? WeeklyDiscountPercent, int? MonthlyDiscountPercent,
     decimal? CleaningFeeUzs, decimal? SecurityDepositUzs, int? DailyKmLimit,
     decimal? ExtraKmFeeUzs, string? Rules, string? CustomRules,
-    bool? IsInstantBook, string? Description, string? CurrentStep
+    bool? IsInstantBook, string? Description, string? CurrentStep,
+    List<string>? Features
 );
 
 public record SubmitDraftResponse(Guid CarId, string Status, int EstimatedReviewMinutes);

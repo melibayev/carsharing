@@ -204,6 +204,80 @@ export function useHostCars(status?: string) {
   });
 }
 
+export function useHostCar(carId: string) {
+  return useQuery({
+    queryKey: ['host', 'cars', carId],
+    queryFn: async () => {
+      const res = await api.get<any>(`/host/cars/${carId}`);
+      return res.data;
+    },
+    enabled: !!carId,
+  });
+}
+
+export function useUpdateCar(carId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) =>
+      api.patch(`/host/cars/${carId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['host', 'cars'] });
+    },
+  });
+}
+
+export function useDeleteCar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (carId: string) => api.delete(`/host/cars/${carId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['host', 'cars'] }),
+  });
+}
+
+export function useUploadCarPhoto(carId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await api.post<{ id: string; url: string; isCover: boolean; sortOrder: number }>(
+        `/host/cars/${carId}/photos`,
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      return res.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['host', 'cars', carId] }),
+  });
+}
+
+export function useDeleteCarPhoto(carId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (photoId: string) => api.delete(`/host/cars/${carId}/photos/${photoId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['host', 'cars', carId] }),
+  });
+}
+
+export function useSetCarPhotoCover(carId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (photoId: string) => api.post(`/host/cars/${carId}/photos/${photoId}/cover`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['host', 'cars', carId] }),
+  });
+}
+
+export function useAvailableFeatures() {
+  return useQuery<string[]>({
+    queryKey: ['host', 'features'],
+    queryFn: async () => {
+      const res = await api.get<string[]>('/host/features');
+      return res.data;
+    },
+    staleTime: 60_000 * 10,
+  });
+}
+
 export function useSnoozeCar() {
   const qc = useQueryClient();
   return useMutation({

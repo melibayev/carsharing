@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using CarSharing.Api.Data;
 using CarSharing.Api.Models.Dtos;
 using CarSharing.Api.Models.Entities;
@@ -287,10 +288,10 @@ public class HostController : ControllerBase
         if (req.IsInstantBook != null) draft.IsInstantBook = req.IsInstantBook.Value;
         if (req.Description != null) draft.Description = req.Description;
         if (req.CurrentStep != null && Enum.TryParse<CarDraftStep>(req.CurrentStep, out var step)) draft.CurrentStep = step;
+        if (req.Features != null) draft.FeaturesJson = JsonSerializer.Serialize(req.Features);
 
-        // Auto-detect vehicle tier by make/year
-        if (draft.Make != null && draft.Year != null)
-            draft.VehicleTier = DetectTier(draft.Make, draft.Year.Value);
+        // Auto-detect vehicle tier from price
+        draft.VehicleTier = DetectTier(draft.DailyPriceUzs ?? 0);
 
         await _db.SaveChangesAsync();
         return Ok(MapDraft(draft));
@@ -448,6 +449,20 @@ public class HostController : ControllerBase
             });
         }
 
+        // Attach features from draft
+        if (!string.IsNullOrEmpty(draft.FeaturesJson))
+        {
+            var featureNames = JsonSerializer.Deserialize<List<string>>(draft.FeaturesJson);
+            if (featureNames?.Count > 0)
+            {
+                var dbFeatures = await _db.Features
+                    .Where(f => featureNames.Contains(f.Name))
+                    .ToListAsync();
+                foreach (var feature in dbFeatures)
+                    _db.CarFeatures.Add(new CarFeature { CarId = car.Id, FeatureId = feature.Id });
+            }
+        }
+
         // Run auto-checks
         var review = await _listingReview.RunAutoChecksAsync(car, user);
         user.FraudRiskScore = review.FraudScore;
@@ -502,11 +517,98 @@ public class HostController : ControllerBase
     {
         var car = await _db.Cars
             .Include(c => c.Photos)
-            .Include(c => c.Bookings)
+            .Include(c => c.CarFeatures).ThenInclude(cf => cf.Feature)
             .FirstOrDefaultAsync(c => c.Id == id && c.OwnerId == CurrentUserId);
 
         if (car == null) return NotFound();
-        return Ok(car);
+
+        const decimal UsdToUzs = 12800m;
+        return Ok(new {
+            car.Id, car.Make, car.Model, car.Year, car.Trim, car.Color,
+            car.OdometerKm, car.Status, car.VehicleTier,
+            car.BodyType, car.Transmission, car.FuelType, car.Seats, car.Doors,
+            DailyPriceUzs        = Math.Round(car.DailyPriceUsd * UsdToUzs),
+            CleaningFeeUzs       = Math.Round(car.CleaningFeeUsd * UsdToUzs),
+            SecurityDepositUzs   = Math.Round(car.SecurityDepositUsd * UsdToUzs),
+            ExtraKmFeeUzs        = car.ExtraKmFeeUsd.HasValue ? Math.Round(car.ExtraKmFeeUsd.Value * UsdToUzs) : (decimal?)null,
+            car.WeeklyDiscountPercent, car.MonthlyDiscountPercent,
+            car.MinTripDays, car.MaxTripDays, car.AdvanceNoticeHours,
+            car.DailyMileageLimitKm, car.IsInstantBook,
+            car.Description, car.Rules,
+            CoverPhotoUrl = car.Photos.FirstOrDefault(p => p.IsCover)?.Url ?? car.Photos.FirstOrDefault()?.Url,
+            Photos = car.Photos.OrderBy(p => p.SortOrder).Select(p => new { p.Id, p.Url, p.IsCover, p.SortOrder }).ToList(),
+            car.AddressLine, car.City,
+            Lat = car.Location != null ? (double?)car.Location.Y : null,
+            Lng = car.Location != null ? (double?)car.Location.X : null,
+            car.PrivacyRadiusMeters, car.CanDeliverToAirports,
+            car.SelfCheckInAvailable, car.GpsTrackerInstalled,
+            Features = car.CarFeatures.Select(cf => cf.Feature.Name).ToList(),
+        });
+    }
+
+    // ─── Car Photo Management ────────────────────────────────────────────────
+
+    [HttpPost("cars/{id:guid}/photos")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> UploadCarPhoto(Guid id, [FromForm] IFormFile file)
+    {
+        var car = await _db.Cars.Include(c => c.Photos)
+            .FirstOrDefaultAsync(c => c.Id == id && c.OwnerId == CurrentUserId);
+        if (car == null) return NotFound();
+
+        if (!file.ContentType.StartsWith("image/"))
+            return BadRequest(new { message = "Only image files are allowed." });
+
+        await using var stream = file.OpenReadStream();
+        var result = await _photoStorage.UploadAsync(stream, file.FileName, $"cars/{id}");
+
+        var nextOrder = car.Photos.Any() ? car.Photos.Max(p => p.SortOrder) + 1 : 0;
+        var isCover = !car.Photos.Any();
+        var photo = new CarPhoto { CarId = car.Id, Url = result.Url, PublicId = result.PublicId, SortOrder = nextOrder, IsCover = isCover };
+        _db.CarPhotos.Add(photo);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { photo.Id, photo.Url, photo.IsCover, photo.SortOrder });
+    }
+
+    [HttpDelete("cars/{id:guid}/photos/{photoId:guid}")]
+    public async Task<IActionResult> DeleteCarPhoto(Guid id, Guid photoId)
+    {
+        var car = await _db.Cars.Include(c => c.Photos)
+            .FirstOrDefaultAsync(c => c.Id == id && c.OwnerId == CurrentUserId);
+        if (car == null) return NotFound();
+
+        var photo = car.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return NotFound();
+
+        if (photo.PublicId != null)
+            await _photoStorage.DeleteAsync(photo.PublicId);
+
+        _db.CarPhotos.Remove(photo);
+
+        // If we removed the cover, promote the next photo
+        if (photo.IsCover)
+        {
+            var next = car.Photos.Where(p => p.Id != photoId).OrderBy(p => p.SortOrder).FirstOrDefault();
+            if (next != null) next.IsCover = true;
+        }
+
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPost("cars/{id:guid}/photos/{photoId:guid}/cover")]
+    public async Task<IActionResult> SetCarPhotoCover(Guid id, Guid photoId)
+    {
+        var car = await _db.Cars.Include(c => c.Photos)
+            .FirstOrDefaultAsync(c => c.Id == id && c.OwnerId == CurrentUserId);
+        if (car == null) return NotFound();
+
+        foreach (var p in car.Photos)
+            p.IsCover = p.Id == photoId;
+
+        await _db.SaveChangesAsync();
+        return Ok();
     }
 
     [HttpPost("cars/{id:guid}/snooze")]
@@ -537,6 +639,92 @@ public class HostController : ControllerBase
         car.Status = CarStatus.Removed;
         await _db.SaveChangesAsync();
         return Ok(new { status = "Removed" });
+    }
+
+    [HttpPatch("cars/{id:guid}")]
+    public async Task<IActionResult> PatchCar(Guid id, [FromBody] HostPatchCarRequest req)
+    {
+        var car = await _db.Cars
+            .Include(c => c.CarFeatures)
+            .FirstOrDefaultAsync(c => c.Id == id && c.OwnerId == CurrentUserId);
+        if (car == null) return NotFound();
+
+        const decimal UzsToUsd = 12800m;
+
+        // Vehicle identity
+        if (req.Make != null) car.Make = req.Make;
+        if (req.Model != null) car.Model = req.Model;
+        if (req.Year.HasValue) car.Year = req.Year.Value;
+        if (req.Trim != null) car.Trim = req.Trim;
+        if (req.Transmission != null && Enum.TryParse<Transmission>(req.Transmission, out var tr)) car.Transmission = tr;
+        if (req.BodyType != null && Enum.TryParse<BodyType>(req.BodyType, out var bt)) car.BodyType = bt;
+        if (req.FuelType != null && Enum.TryParse<FuelType>(req.FuelType, out var ft)) car.FuelType = ft;
+        if (req.Seats.HasValue) car.Seats = req.Seats.Value;
+        if (req.Doors.HasValue) car.Doors = req.Doors.Value;
+
+        // Pricing
+        if (req.DailyPriceUzs.HasValue) { car.DailyPriceUsd = req.DailyPriceUzs.Value / UzsToUsd; car.VehicleTier = DetectTier(req.DailyPriceUzs.Value); }
+        if (req.CleaningFeeUzs.HasValue)   car.CleaningFeeUsd         = req.CleaningFeeUzs.Value / UzsToUsd;
+        if (req.SecurityDepositUzs.HasValue) car.SecurityDepositUsd   = req.SecurityDepositUzs.Value / UzsToUsd;
+        if (req.ExtraKmFeeUzs.HasValue)    car.ExtraKmFeeUsd          = req.ExtraKmFeeUzs.Value / UzsToUsd;
+        if (req.WeeklyDiscountPercent.HasValue)  car.WeeklyDiscountPercent  = req.WeeklyDiscountPercent.Value;
+        if (req.MonthlyDiscountPercent.HasValue) car.MonthlyDiscountPercent = req.MonthlyDiscountPercent.Value;
+        if (req.MinTripDays.HasValue)        car.MinTripDays           = req.MinTripDays.Value;
+        if (req.MaxTripDays.HasValue)        car.MaxTripDays           = req.MaxTripDays.Value;
+        if (req.AdvanceNoticeHours.HasValue) car.AdvanceNoticeHours    = req.AdvanceNoticeHours.Value;
+        if (req.DailyMileageLimitKm.HasValue) car.DailyMileageLimitKm = req.DailyMileageLimitKm.Value;
+        if (req.Description != null)         car.Description           = req.Description;
+        if (req.Rules != null)               car.Rules                 = req.Rules;
+        if (req.IsInstantBook.HasValue)      car.IsInstantBook         = req.IsInstantBook.Value;
+        if (req.Color != null)               car.Color                 = req.Color;
+        if (req.OdometerKm.HasValue)         car.OdometerKm            = req.OdometerKm.Value;
+
+        // Location
+        if (req.AddressLine != null) car.AddressLine = req.AddressLine;
+        if (req.City != null) car.City = req.City;
+        if (req.Lat.HasValue && req.Lng.HasValue)
+            car.Location = new Point(req.Lng.Value, req.Lat.Value) { SRID = 4326 };
+        if (req.PrivacyRadiusMeters.HasValue) car.PrivacyRadiusMeters = req.PrivacyRadiusMeters.Value;
+        if (req.CanDeliverToAirports.HasValue) car.CanDeliverToAirports = req.CanDeliverToAirports.Value;
+        if (req.SelfCheckInAvailable.HasValue) car.SelfCheckInAvailable = req.SelfCheckInAvailable.Value;
+        if (req.GpsTrackerInstalled.HasValue) car.GpsTrackerInstalled = req.GpsTrackerInstalled.Value;
+
+        // Features
+        if (req.Features != null)
+        {
+            _db.CarFeatures.RemoveRange(car.CarFeatures);
+            var featureEnts = await _db.Features.Where(f => req.Features.Contains(f.Name)).ToListAsync();
+            foreach (var feat in featureEnts)
+                _db.CarFeatures.Add(new CarFeature { CarId = car.Id, FeatureId = feat.Id });
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(new { car.Id, car.Make, car.Model, car.Year, car.Status, car.VehicleTier });
+    }
+
+    [HttpGet("features")]
+    public async Task<ActionResult<List<string>>> GetAvailableFeatures()
+    {
+        var names = await _db.Features.OrderBy(f => f.Name).Select(f => f.Name).ToListAsync();
+        return Ok(names);
+    }
+
+    [HttpDelete("cars/{id:guid}")]
+    public async Task<IActionResult> DeleteCar(Guid id)
+    {
+        var car = await _db.Cars
+            .Include(c => c.Bookings)
+            .FirstOrDefaultAsync(c => c.Id == id && c.OwnerId == CurrentUserId);
+        if (car == null) return NotFound();
+
+        var activeStatuses = new[] { BookingStatus.PendingApproval, BookingStatus.Confirmed, BookingStatus.InProgress };
+        var hasActive = car.Bookings.Any(b => activeStatuses.Contains(b.Status));
+        if (hasActive)
+            return BadRequest(new { message = "Cannot delete a car with active bookings." });
+
+        car.Status = CarStatus.Removed;
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     // ─── Host Dashboard Metrics ──────────────────────────────────────────────
@@ -701,16 +889,11 @@ public class HostController : ControllerBase
 
     // ─── Private helpers ─────────────────────────────────────────────────────
 
-    private static VehicleTier DetectTier(string make, int year)
-    {
-        var luxury = new[] { "Mercedes", "BMW", "Tesla", "Zeekr" };
-        var premium = new[] { "Toyota", "Volkswagen", "Nissan" };
-
-        if (luxury.Contains(make, StringComparer.OrdinalIgnoreCase)) return VehicleTier.Luxury;
-        if (premium.Contains(make, StringComparer.OrdinalIgnoreCase) && year >= 2020) return VehicleTier.Premium;
-        if (year >= 2022) return VehicleTier.Standard;
-        return VehicleTier.Economy;
-    }
+    private static VehicleTier DetectTier(decimal dailyPriceUzs) =>
+        dailyPriceUzs >= 10_000_000m ? VehicleTier.Luxury  :
+        dailyPriceUzs >=  5_000_000m ? VehicleTier.Premium :
+        dailyPriceUzs >=  2_000_000m ? VehicleTier.Standard:
+                                        VehicleTier.Economy;
 
     private static PayoutMethodDto MapPayoutMethod(PayoutMethod m) => new()
     {
@@ -775,6 +958,9 @@ public class HostController : ControllerBase
         CustomRules = d.CustomRules,
         IsInstantBook = d.IsInstantBook,
         Description = d.Description,
+        Features = d.FeaturesJson != null
+            ? JsonSerializer.Deserialize<List<string>>(d.FeaturesJson)
+            : null,
         CreatedAt = d.CreatedAt,
         UpdatedAt = d.UpdatedAt,
     };

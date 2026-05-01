@@ -19,6 +19,16 @@ export function useCarSearch(params: CarSearchParams) {
   });
 }
 
+export function useFeaturedCars(count = 8) {
+  return useQuery({
+    queryKey: ['cars', 'featured', count],
+    queryFn: async () => {
+      const res = await api.get<CarListDto[]>('/cars/featured', { params: { count } });
+      return res.data;
+    },
+  });
+}
+
 export function useCarDetail(carId: string) {
   return useQuery({
     queryKey: ['cars', carId],

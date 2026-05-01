@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CarSharing Uzbekistan — Graduation Project</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --accent: #10b981;
+    --accent2: #f59e0b;
+    --dark: #0f172a;
+    --dark2: #1e293b;
+    --mid: #334155;
+    --light: #f8fafc;
+    --muted: #94a3b8;
+    --border: rgba(255,255,255,0.1);
+    --card: rgba(255,255,255,0.05);
+    --slide-bg: #0f172a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .slideshow {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 64px;
+    background: var(--slide-bg);
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  /* ─── BACKGROUNDS ─── */
+  .bg-gradient {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  }
+  .bg-blue {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%);
+  }
+  .bg-teal {
+    background: linear-gradient(135deg, #0f172a 0%, #064e3b 60%, #0f172a 100%);
+  }
+  .bg-amber {
+    background: linear-gradient(135deg, #0f172a 0%, #451a03 60%, #0f172a 100%);
+  }
+  .bg-violet {
+    background: linear-gradient(135deg, #0f172a 0%, #2e1065 60%, #0f172a 100%);
+  }
+  .bg-rose {
+    background: linear-gradient(135deg, #0f172a 0%, #4c0519 60%, #0f172a 100%);
+  }
+  .bg-indigo {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%);
+  }
+
+  /* decorative blobs */
+  .slide::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+    top: -200px; right: -200px;
+    pointer-events: none;
+  }
+  .slide::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+    pointer-events: none;
+  }
+
+  /* ─── SLIDE COUNTER & NAVIGATION ─── */
+  .nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    background: rgba(15,23,42,0.9);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 8px 16px;
+    backdrop-filter: blur(12px);
+  }
+
+  .nav button {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .nav button:hover { background: rgba(37,99,235,0.4); }
+
+  .counter {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 60px;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dot.active { background: var(--primary); transform: scale(1.4); }
+
+  /* ─── TYPOGRAPHY ─── */
+  .slide-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 12px;
+  }
+
+  h1 { font-size: 52px; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 36px; font-weight: 700; line-height: 1.2; }
+  h3 { font-size: 22px; font-weight: 600; }
+  h4 { font-size: 16px; font-weight: 600; }
+  p  { font-size: 15px; line-height: 1.7; color: var(--muted); }
+
+  .accent { color: var(--accent); }
+  .primary { color: #60a5fa; }
+  .amber  { color: var(--accent2); }
+  .rose   { color: #f43f5e; }
+  .violet { color: #a78bfa; }
+  .muted  { color: var(--muted); }
+
+  .text-center { text-align: center; }
+  .text-left   { text-align: left; }
+
+  /* ─── LAYOUT HELPERS ─── */
+  .row { display: flex; gap: 24px; width: 100%; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .col-2 { flex: 1; }
+  .col-3 { flex: 0 0 33%; }
+  .col-4 { flex: 0 0 25%; }
+  .gap-8  { gap: 8px; }
+  .gap-16 { gap: 16px; }
+  .gap-24 { gap: 24px; }
+  .gap-32 { gap: 32px; }
+  .mt-8  { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-32 { margin-top: 32px; }
+  .mb-8  { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+  .full  { width: 100%; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .card-blue  { border-color: rgba(37,99,235,0.3); background: rgba(37,99,235,0.06); }
+  .card-teal  { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); }
+  .card-amber { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.06); }
+  .card-violet{ border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.06); }
+  .card-rose  { border-color: rgba(244,63,94,0.3); background: rgba(244,63,94,0.06); }
+
+  /* ─── BADGES / PILLS ─── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+  .badge-blue   { background: rgba(37,99,235,0.2);  color: #93c5fd; border: 1px solid rgba(37,99,235,0.3); }
+  .badge-teal   { background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-amber  { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-violet { background: rgba(167,139,250,0.2);color: #c4b5fd; border: 1px solid rgba(167,139,250,0.3); }
+  .badge-rose   { background: rgba(244,63,94,0.2);  color: #fda4af; border: 1px solid rgba(244,63,94,0.3); }
+  .badge-gray   { background: rgba(148,163,184,0.15);color: #cbd5e1; border: 1px solid rgba(148,163,184,0.2); }
+
+  /* ─── STAT BOXES ─── */
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ─── FLOW STEPS ─── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .step-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: center;
+  }
+  .step-arrow {
+    font-size: 18px;
+    color: var(--muted);
+    padding: 0 4px;
+    flex: 0;
+    margin-top: -20px;
+  }
+
+  /* ─── TECH CHIPS ─── */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e2e8f0;
+  }
+
+  /* ─── TIMELINE ─── */
+  .timeline-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .timeline-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--primary);
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .timeline-dot.teal  { background: var(--accent); }
+  .timeline-dot.amber { background: var(--accent2); }
+  .timeline-dot.violet{ background: #a78bfa; }
+
+  /* ─── SECTION TITLE ─── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    color: var(--muted);
+  }
+
+  /* ─── TABLE ─── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .tbl td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .tbl tr:last-child td { border-bottom: none; }
+
+  /* ─── DIVIDER ─── */
+  .divider { width: 60px; height: 3px; background: var(--primary); border-radius: 2px; margin: 12px 0; }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-wrap { width: 100%; background: rgba(255,255,255,0.08); border-radius: 99px; height: 6px; }
+  .progress { height: 6px; border-radius: 99px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
+
+  /* ─── KEYBOARD HINT ─── */
+  .kbd-hint {
+    font-size: 11px;
+    color: rgba(148,163,184,0.6);
+    position: fixed;
+    bottom: 24px;
+    right: 32px;
+    z-index: 100;
+    background: rgba(15,23,42,0.8);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    backdrop-filter: blur(8px);
+  }
+
+  /* ─── TITLE PAGE EXTRAS ─── */
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 99px;
+    background: rgba(37,99,235,0.15);
+    border: 1px solid rgba(37,99,235,0.3);
+    color: #93c5fd;
+    margin-bottom: 24px;
+  }
+  .hero-title {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #fff 0%, #93c5fd 60%, #6ee7b7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 18px;
+    color: var(--muted);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .meta-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .meta-label { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+  .meta-value { font-size: 15px; font-weight: 600; }
+
+  /* ─── ICON CIRCLES ─── */
+  .icon-circle {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .icon-circle.blue   { background: rgba(37,99,235,0.2); }
+  .icon-circle.teal   { background: rgba(16,185,129,0.2); }
+  .icon-circle.amber  { background: rgba(245,158,11,0.2); }
+  .icon-circle.violet { background: rgba(167,139,250,0.2); }
+  .icon-circle.rose   { background: rgba(244,63,94,0.2); }
+
+  /* ─── ARCHITECTURE BOX ─── */
+  .arch-box {
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.04);
+  }
+  .arch-arrow { color: var(--muted); font-size: 20px; display: flex; align-items: center; }
+
+  /* ─── GRID ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+  /* ─── CHECK LIST ─── */
+  .check-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: #e2e8f0;
+    line-height: 1.5;
+  }
+  .check-list li::before {
+    content: '✓';
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ─── SLIDE TRANSITION ─── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .slide.active > * { animation: fadeIn 0.45s ease both; }
+  .slide.active > *:nth-child(2) { animation-delay: 0.06s; }
+  .slide.active > *:nth-child(3) { animation-delay: 0.12s; }
+  .slide.active > *:nth-child(4) { animation-delay: 0.18s; }
+  .slide.active > *:nth-child(5) { animation-delay: 0.24s; }
+  .slide.active > *:nth-child(6) { animation-delay: 0.30s; }
+
+  /* ─── HORIZONTAL RULE ─── */
+  hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 8px 0; }
+
+</style>
+</head>
+<body>
+
+<div class="slideshow">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 1 — TITLE
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-gradient active" id="slide-1">
+    <div class="hero-badge">🚗 Graduation Project · 2026</div>
+    <div class="hero-title">CarSharing<br><span style="color:#6ee7b7">Uzbekistan</span></div>
+    <p class="hero-sub" style="max-width:600px;text-align:center">
+      A full-stack peer-to-peer car rental marketplace —<br>
+      connecting private car owners with renters across Uzbekistan.
+    </p>
+    <div class="divider" style="margin:24px auto"></div>
+    <div class="meta-row" style="justify-content:center">
+      <div class="meta-item text-center">
+        <span class="meta-label">Platform</span>
+        <span class="meta-value">Web Application</span>
+      </div>
+      <div class="meta-item text-center">
+        <span class="meta-label">Backend</span>
+        <span class="meta-value">.NET 8 + PostgreSQL</span>
+      </div>
+      <div class="meta-item text-center">
+        <span class="meta-label">Frontend</span>
+        <span class="meta-value">React + TypeScript</span>
+      </div>
+      <div class="meta-item text-center">
+        <span class="meta-label">Deployment</span>
+        <span class="meta-value">Docker Compose</span>
+      </div>
+    </div>
+    <div style="margin-top:40px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+      <span class="badge badge-blue">25+ Entities</span>
+      <span class="badge badge-teal">15 REST APIs</span>
+      <span class="badge badge-amber">3 SignalR Hubs</span>
+      <span class="badge badge-violet">Geospatial Search</span>
+      <span class="badge badge-rose">Full Payment System</span>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 2 — PROBLEM & MOTIVATION
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-rose" id="slide-2">
+    <div class="slide-label">Problem Statement</div>
+    <h2 style="max-width:700px">The Car Rental Gap <span class="rose">in Uzbekistan</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-24 gap-24">
+      <div class="col col-2">
+        <div class="card card-rose" style="padding:24px">
+          <div style="font-size:32px;margin-bottom:12px">🏢</div>
+          <h4 style="color:#fda4af;margin-bottom:8px">Traditional Car Rental Agencies</h4>
+          <ul class="check-list" style="gap:6px">
+            <li style="color:var(--muted)">High prices — middlemen add 40–60% markup</li>
+            <li style="color:var(--muted)">Limited vehicle variety and availability</li>
+            <li style="color:var(--muted)">Complicated paper-based processes</li>
+            <li style="color:var(--muted)">No transparent pricing or reviews</li>
+          </ul>
+        </div>
+        <div class="card card-amber" style="padding:24px;margin-top:0">
+          <div style="font-size:32px;margin-bottom:12px">🚗</div>
+          <h4 style="color:#fcd34d;margin-bottom:8px">Private Car Owners</h4>
+          <ul class="check-list" style="gap:6px">
+            <li style="color:var(--muted)">Cars sit idle 90% of the time</li>
+            <li style="color:var(--muted)">No platform to safely monetize their asset</li>
+            <li style="color:var(--muted)">No trust mechanism between strangers</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col col-2">
+        <div class="card" style="padding:28px;border-color:rgba(255,255,255,0.12)">
+          <p class="section-title">Market Opportunity</p>
+          <div class="grid-2 mt-8 gap-16">
+            <div class="stat-box">
+              <div class="stat-number primary">4M+</div>
+              <div class="stat-label">Registered private cars in Uzbekistan</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number accent">~90%</div>
+              <div class="stat-label">Average daily idle time per vehicle</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number amber">35M+</div>
+              <div class="stat-label">Population — growing digital adoption</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" style="color:#f43f5e">0</div>
+              <div class="stat-label">Existing peer-to-peer car rental apps</div>
+            </div>
+          </div>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <h4 class="accent" style="margin-bottom:8px">Our Solution</h4>
+          <p style="font-size:14px">A trusted, transparent digital marketplace where anyone can rent to or from verified locals — with KYC, secure payments, and real-time communication built in.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 3 — TECH STACK
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-blue" id="slide-3">
+    <div class="slide-label">Technology</div>
+    <h2>Technology Stack</h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-24 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-blue" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle blue">⚙️</div>
+            <h4 class="primary">Backend · .NET 8</h4>
+          </div>
+          <div class="chips">
+            <span class="chip">ASP.NET Core 8</span>
+            <span class="chip">Entity Framework Core</span>
+            <span class="chip">PostgreSQL + PostGIS</span>
+            <span class="chip">Redis</span>
+            <span class="chip">SignalR</span>
+            <span class="chip">Hangfire</span>
+            <span class="chip">FluentValidation</span>
+            <span class="chip">AutoMapper</span>
+            <span class="chip">Serilog</span>
+            <span class="chip">JWT Bearer Auth</span>
+          </div>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle teal">⚛️</div>
+            <h4 class="accent">Frontend · React</h4>
+          </div>
+          <div class="chips">
+            <span class="chip">React 18 + TypeScript</span>
+            <span class="chip">Vite</span>
+            <span class="chip">TanStack Query</span>
+            <span class="chip">React Router v6</span>
+            <span class="chip">Recharts</span>
+            <span class="chip">Framer Motion</span>
+            <span class="chip">Tailwind CSS</span>
+            <span class="chip">shadcn/ui</span>
+            <span class="chip">Zustand</span>
+            <span class="chip">Yandex Maps API</span>
+          </div>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card card-violet" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle violet">🐳</div>
+            <h4 class="violet">Infrastructure & DevOps</h4>
+          </div>
+          <div class="chips">
+            <span class="chip">Docker Compose</span>
+            <span class="chip">Nginx</span>
+            <span class="chip">PostgreSQL 16</span>
+            <span class="chip">Redis 7</span>
+            <span class="chip">Mailhog (dev)</span>
+            <span class="chip">Cloudinary CDN</span>
+            <span class="chip">Twilio SMS</span>
+          </div>
+        </div>
+        <div class="card card-amber" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle amber">🔒</div>
+            <h4 class="amber">Security & Quality</h4>
+          </div>
+          <div class="chips">
+            <span class="chip">JWT (15min + 14d refresh)</span>
+            <span class="chip">Rate Limiting</span>
+            <span class="chip">Security Headers</span>
+            <span class="chip">Audit Trail</span>
+            <span class="chip">FluentValidation</span>
+            <span class="chip">Idempotency Keys</span>
+            <span class="chip">Optimistic Concurrency</span>
+          </div>
+        </div>
+        <div class="card" style="padding:16px;border-color:rgba(255,255,255,0.1)">
+          <p class="section-title" style="margin-bottom:8px">Services Architecture</p>
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div class="text-center">
+              <div style="font-size:22px;font-weight:800;color:#60a5fa">15</div>
+              <div style="font-size:11px;color:var(--muted)">Controllers</div>
+            </div>
+            <div class="text-center">
+              <div style="font-size:22px;font-weight:800;color:#6ee7b7">16</div>
+              <div style="font-size:11px;color:var(--muted)">Service Modules</div>
+            </div>
+            <div class="text-center">
+              <div style="font-size:22px;font-weight:800;color:#fcd34d">25+</div>
+              <div style="font-size:11px;color:var(--muted)">Domain Entities</div>
+            </div>
+            <div class="text-center">
+              <div style="font-size:22px;font-weight:800;color:#c4b5fd">3</div>
+              <div style="font-size:11px;color:var(--muted)">SignalR Hubs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 4 — SYSTEM ARCHITECTURE
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-indigo" id="slide-4">
+    <div class="slide-label">Architecture</div>
+    <h2>System Architecture</h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-20 gap-16" style="align-items:stretch">
+
+      <!-- Client -->
+      <div class="col" style="flex:0 0 160px;gap:8px;justify-content:center">
+        <div class="arch-box card-blue" style="padding:16px">
+          <div style="font-size:24px">🌐</div>
+          <div style="margin-top:6px;font-size:12px;font-weight:700;color:#93c5fd">Browser</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">React + TypeScript<br>Tailwind CSS<br>TanStack Query</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- API Gateway -->
+      <div class="col" style="flex:0 0 180px;gap:8px;justify-content:center">
+        <div class="arch-box card-violet" style="padding:16px">
+          <div style="font-size:24px">🔒</div>
+          <div style="margin-top:6px;font-size:12px;font-weight:700;color:#c4b5fd">API Gateway</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">JWT Auth<br>Rate Limiter<br>CORS<br>Security Headers</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- API Services -->
+      <div class="col" style="flex:1;gap:8px">
+        <div class="section-title">ASP.NET Core 8 — REST + SignalR</div>
+        <div class="grid-2 gap-8" style="gap:8px">
+          <div class="arch-box" style="font-size:11px">📋 BookingService</div>
+          <div class="arch-box" style="font-size:11px">💳 CheckoutService</div>
+          <div class="arch-box" style="font-size:11px">🏦 BalanceService</div>
+          <div class="arch-box" style="font-size:11px">🚗 CarSearchService</div>
+          <div class="arch-box" style="font-size:11px">🪪 KycService</div>
+          <div class="arch-box" style="font-size:11px">💬 MessageService</div>
+          <div class="arch-box" style="font-size:11px">🔔 NotificationService</div>
+          <div class="arch-box" style="font-size:11px">⭐ ReviewService</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <div class="arch-box card-teal" style="flex:1;font-size:11px;padding:8px">🕐 Hangfire Jobs<br><span style="color:var(--muted);font-size:10px">Expiry · Payout · Reminders</span></div>
+          <div class="arch-box card-amber" style="flex:1;font-size:11px;padding:8px">📡 SignalR Hubs<br><span style="color:var(--muted);font-size:10px">Chat · Admin · Host</span></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- Data layer -->
+      <div class="col" style="flex:0 0 155px;gap:8px;justify-content:center">
+        <div class="arch-box card-teal" style="padding:12px">
+          <div style="font-size:18px">🗄️</div>
+          <div style="font-size:11px;font-weight:700;color:#6ee7b7;margin-top:4px">PostgreSQL 16</div>
+          <div style="font-size:10px;color:var(--muted)">PostGIS extension<br>EF Core migrations</div>
+        </div>
+        <div class="arch-box" style="padding:10px">
+          <div style="font-size:18px">⚡</div>
+          <div style="font-size:11px;font-weight:700;color:#fcd34d;margin-top:4px">Redis 7</div>
+          <div style="font-size:10px;color:var(--muted)">Session · Rate limits</div>
+        </div>
+        <div class="arch-box" style="padding:10px">
+          <div style="font-size:18px">☁️</div>
+          <div style="font-size:11px;font-weight:700;color:#c4b5fd;margin-top:4px">Cloudinary</div>
+          <div style="font-size:10px;color:var(--muted)">Photo storage</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-16 gap-12 full">
+      <div class="card" style="flex:1;padding:12px 16px;border-color:rgba(255,255,255,0.08)">
+        <p style="font-size:12px;color:var(--muted)">🔐 <strong style="color:#e2e8f0">Authentication:</strong> JWT (15-min access token + 14-day refresh) — token validated on every request via JwtBearerEvents; SignalR tokens passed as query string <code style="color:#93c5fd;font-size:11px">?access_token=</code></p>
+      </div>
+      <div class="card" style="flex:1;padding:12px 16px;border-color:rgba(255,255,255,0.08)">
+        <p style="font-size:12px;color:var(--muted)">📦 <strong style="color:#e2e8f0">Deployment:</strong> 5-container Docker Compose — postgres, redis, mailhog, api, web (Nginx). Auto-migration + seeding on startup.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 5 — USER JOURNEYS
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-teal" id="slide-5">
+    <div class="slide-label">User Flows</div>
+    <h2>End-to-End User Journeys</h2>
+    <div class="divider mt-8"></div>
+
+    <!-- Guest Flow -->
+    <div class="full mt-16">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span class="badge badge-blue">🧳 Guest — Renter</span>
+      </div>
+      <div class="flow" style="gap:0">
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">1</div>
+          <div class="step-label">Register &<br>Verify Email</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">2</div>
+          <div class="step-label">KYC Identity<br>Verification</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">3</div>
+          <div class="step-label">Search &<br>Browse Cars</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">4</div>
+          <div class="step-label">Request<br>Booking</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">5</div>
+          <div class="step-label">Pay via<br>Wallet / Card</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">6</div>
+          <div class="step-label">Pick Up<br>Car</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(37,99,235,0.25);color:#93c5fd">7</div>
+          <div class="step-label">Return &<br>Review Host</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Host Flow -->
+    <div class="full mt-16">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span class="badge badge-teal">🏠 Host — Car Owner</span>
+      </div>
+      <div class="flow">
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">1</div>
+          <div class="step-label">Register &<br>KYC</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">2</div>
+          <div class="step-label">Host<br>Onboarding</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">3</div>
+          <div class="step-label">List Car<br>+ Docs</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">4</div>
+          <div class="step-label">Admin<br>Approves</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">5</div>
+          <div class="step-label">Approve<br>Requests</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">6</div>
+          <div class="step-label">Check-in &<br>Check-out</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-icon" style="background:rgba(16,185,129,0.25);color:#6ee7b7">7</div>
+          <div class="step-label">Wallet<br>Credited</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-16 gap-12 full">
+      <div class="card card-blue" style="flex:1;padding:14px 18px">
+        <h4 style="color:#93c5fd;margin-bottom:6px;font-size:13px">Instant Book</h4>
+        <p style="font-size:12px">If host enables Instant Book, payment is captured and host wallet credited immediately — no manual approval needed.</p>
+      </div>
+      <div class="card card-teal" style="flex:1;padding:14px 18px">
+        <h4 style="color:#6ee7b7;margin-bottom:6px;font-size:13px">Auto-Expiry</h4>
+        <p style="font-size:12px">Pending bookings without host response auto-expire after 24 hours. Hangfire job runs every minute.</p>
+      </div>
+      <div class="card card-amber" style="flex:1;padding:14px 18px">
+        <h4 style="color:#fcd34d;margin-bottom:6px;font-size:13px">Dispute Resolution</h4>
+        <p style="font-size:12px">Either party can raise a dispute. Admin reviews with full audit trail. Funds held until resolution.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 6 — SEARCH & DISCOVERY
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-blue" id="slide-6">
+    <div class="slide-label">Core Feature</div>
+    <h2>Smart Car Search <span class="primary">&amp; Discovery</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-20 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-blue" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle blue">📍</div>
+            <h4 class="primary">PostGIS Geospatial Search</h4>
+          </div>
+          <ul class="check-list">
+            <li>Filter cars by coordinates + radius (km)</li>
+            <li>Sort results by real distance to user</li>
+            <li>Privacy radius — exact address hidden until booking</li>
+            <li>Yandex Maps integration on car detail page</li>
+          </ul>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle teal">📅</div>
+            <h4 class="accent">Date Availability Engine</h4>
+          </div>
+          <ul class="check-list">
+            <li>Real-time conflict check against active bookings</li>
+            <li>Host-blocked date ranges excluded</li>
+            <li>Advance notice hours enforced per car</li>
+            <li>Min / max trip day constraints</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card" style="padding:20px">
+          <p class="section-title">All Available Filters</p>
+          <div class="chips mt-8">
+            <span class="chip">City</span>
+            <span class="chip">Date Range</span>
+            <span class="chip">Min / Max Price</span>
+            <span class="chip">Body Type</span>
+            <span class="chip">Make</span>
+            <span class="chip">Transmission</span>
+            <span class="chip">Fuel Type</span>
+            <span class="chip">Seats</span>
+            <span class="chip">Instant Book</span>
+            <span class="chip">Features (multi)</span>
+            <span class="chip">Radius KM</span>
+            <span class="chip">Sort: price / rating / distance</span>
+          </div>
+        </div>
+        <div class="card card-amber" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle amber">🏙️</div>
+            <h4 class="amber">Uzbekistan Regions</h4>
+          </div>
+          <div class="grid-4 gap-8" style="font-size:11px;color:var(--muted)">
+            <div>🏙 Tashkent<br>120+ cars</div>
+            <div>🕌 Samarkand<br>45+ cars</div>
+            <div>🏛 Bukhara<br>35+ cars</div>
+            <div>⛰ Fergana<br>25+ cars</div>
+            <div>🌅 Andijan<br>20+ cars</div>
+            <div>🌲 Namangan<br>18+ cars</div>
+            <div>☀️ Khorezm<br>15+ cars</div>
+            <div>🌊 Qashqa<br>10+ cars</div>
+          </div>
+        </div>
+        <div class="card card-violet" style="padding:16px">
+          <p class="section-title" style="margin-bottom:8px">Body Types Supported</p>
+          <div class="chips">
+            <span class="chip">Sedan</span><span class="chip">SUV</span><span class="chip">Hatchback</span>
+            <span class="chip">Coupe</span><span class="chip">Van</span><span class="chip">Minivan</span>
+            <span class="chip">Truck</span><span class="chip">Convertible</span><span class="chip">SportsCar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 7 — BOOKING & PRICING ENGINE
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-gradient" id="slide-7">
+    <div class="slide-label">Core Feature</div>
+    <h2>Booking Flow <span class="primary">&amp; Pricing Engine</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-16 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-blue" style="padding:20px">
+          <h4 class="primary" style="margin-bottom:12px">💰 Price Calculation</h4>
+          <table class="tbl">
+            <tr><td>Daily rate × days</td><td style="color:#93c5fd;font-weight:600">Subtotal</td></tr>
+            <tr><td>Weekly/Monthly discount</td><td style="color:#6ee7b7">− % off</td></tr>
+            <tr><td>Cleaning fee</td><td style="color:#e2e8f0">+ Fixed</td></tr>
+            <tr><td>Service fee</td><td style="color:#fda4af">+ 15%</td></tr>
+            <tr><td>Taxes</td><td style="color:#fda4af">+ 8%</td></tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.15)"><td><strong>Total charged</strong></td><td><strong style="color:#60a5fa">= Final</strong></td></tr>
+            <tr><td>Host payout</td><td style="color:#6ee7b7">≈ 85% of subtotal</td></tr>
+          </table>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <h4 class="accent" style="margin-bottom:12px">🔒 Checkout Price Lock</h4>
+          <ul class="check-list">
+            <li>10-minute checkout session lock</li>
+            <li>Countdown timer shown to user</li>
+            <li>Lock refreshed on page revisit</li>
+            <li>Idempotency key prevents double-payment</li>
+            <li>Optimistic concurrency on balance updates</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card card-violet" style="padding:20px">
+          <h4 class="violet" style="margin-bottom:12px">📋 Booking Lifecycle</h4>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="badge badge-gray">PendingApproval</span>
+              <span style="font-size:12px;color:var(--muted)">Created · awaiting host</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="badge badge-blue">Confirmed</span>
+              <span style="font-size:12px;color:var(--muted)">Approved · funds captured</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="badge badge-amber">InProgress</span>
+              <span style="font-size:12px;color:var(--muted)">Car checked out · trip live</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="badge badge-teal">Completed</span>
+              <span style="font-size:12px;color:var(--muted)">Returned · reviews unlocked</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="badge badge-rose">Disputed</span>
+              <span style="font-size:12px;color:var(--muted)">Escalated to admin</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="badge badge-rose">Rejected / Cancelled</span>
+              <span style="font-size:12px;color:var(--muted)">Auto-refund to wallet</span>
+            </div>
+          </div>
+        </div>
+        <div class="card card-amber" style="padding:20px">
+          <h4 class="amber" style="margin-bottom:12px">📸 Check-in / Check-out</h4>
+          <ul class="check-list">
+            <li>Host records odometer reading at handoff</li>
+            <li>Photo documentation (JSON array, Cloudinary)</li>
+            <li>Odometer delta for extra-km fee calculation</li>
+            <li>Automatic trip count increment (car + host + guest)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 8 — PAYMENT SYSTEM
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-amber" id="slide-8">
+    <div class="slide-label">Core Feature</div>
+    <h2>Payment System</h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-16 gap-20">
+      <div class="col" style="flex:1;gap:14px">
+        <div class="card card-blue" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle blue">💼</div>
+            <h4 class="primary">In-App Wallet</h4>
+          </div>
+          <ul class="check-list">
+            <li>Top-up via SMS-verified intent (Twilio)</li>
+            <li>Fund locking on booking creation</li>
+            <li>Atomic capture on booking approval</li>
+            <li>Instant refund to wallet on cancellation</li>
+            <li>Version-based optimistic concurrency</li>
+            <li>Full ledger with car photos &amp; booking links</li>
+          </ul>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle teal">💳</div>
+            <h4 class="accent">Card Payments</h4>
+          </div>
+          <div class="chips">
+            <span class="chip">Visa / Mastercard</span>
+            <span class="chip">Uzcard</span>
+            <span class="chip">Humo</span>
+            <span class="chip">Payme</span>
+            <span class="chip">Click</span>
+            <span class="chip">Bank Account</span>
+          </div>
+          <p style="font-size:12px;margin-top:10px">Stored securely — tokenized reference only. Default card remembered per user.</p>
+        </div>
+      </div>
+      <div class="col" style="flex:1;gap:14px">
+        <div class="card card-amber" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle amber">🏦</div>
+            <h4 class="amber">Host Wallet &amp; Payouts</h4>
+          </div>
+          <ul class="check-list">
+            <li>Host credited immediately on booking approval</li>
+            <li>Currency: UZS (12,800 × USD rate applied)</li>
+            <li>Daily Hangfire payout job (production)</li>
+            <li>Payout methods: bank account, Uzcard, Humo</li>
+            <li>Full ledger with HostEarning ledger entry type</li>
+          </ul>
+        </div>
+        <div class="card card-violet" style="padding:20px">
+          <h4 class="violet" style="margin-bottom:12px">📒 Ledger System</h4>
+          <table class="tbl">
+            <tr><th>Entry Type</th><th>Direction</th></tr>
+            <tr><td>TopUp</td><td><span class="badge badge-teal" style="font-size:10px">Credit</span></td></tr>
+            <tr><td>BookingHold</td><td><span class="badge badge-rose" style="font-size:10px">Debit</span></td></tr>
+            <tr><td>BookingCapture</td><td><span class="badge badge-rose" style="font-size:10px">Debit</span></td></tr>
+            <tr><td>BookingHoldRelease</td><td><span class="badge badge-teal" style="font-size:10px">Credit</span></td></tr>
+            <tr><td>RefundCredit</td><td><span class="badge badge-teal" style="font-size:10px">Credit</span></td></tr>
+            <tr><td>HostEarning</td><td><span class="badge badge-teal" style="font-size:10px">Credit</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="col" style="flex:0 0 180px;gap:14px;justify-content:center">
+        <div class="stat-box" style="padding:20px">
+          <div class="stat-number accent">6</div>
+          <div class="stat-label">Payment method types</div>
+        </div>
+        <div class="stat-box" style="padding:20px">
+          <div class="stat-number primary">10</div>
+          <div class="stat-label">Min checkout lock (sec)</div>
+        </div>
+        <div class="stat-box" style="padding:20px">
+          <div class="stat-number amber">5</div>
+          <div class="stat-label">Max daily top-ups</div>
+        </div>
+        <div class="stat-box" style="padding:20px">
+          <div class="stat-number violet">6</div>
+          <div class="stat-label">Ledger entry types</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 9 — REAL-TIME & NOTIFICATIONS
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-violet" id="slide-9">
+    <div class="slide-label">Core Feature</div>
+    <h2>Real-Time Communication <span class="violet">&amp; Notifications</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-20 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-violet" style="padding:20px">
+          <h4 class="violet" style="margin-bottom:12px">📡 3 SignalR WebSocket Hubs</h4>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#c4b5fd;margin-bottom:4px">💬 ChatHub</div>
+              <p style="font-size:12px">Per-booking group channels. Guest and host join <code style="color:#a78bfa">booking_{id}</code> group. Messages pushed in real-time with BookingCard system messages.</p>
+            </div>
+            <hr/>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#c4b5fd;margin-bottom:4px">🏠 HostHub</div>
+              <p style="font-size:12px">Live booking request notifications pushed to host dashboard the moment a guest submits a booking.</p>
+            </div>
+            <hr/>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#c4b5fd;margin-bottom:4px">🛡 AdminHub</div>
+              <p style="font-size:12px">Real-time KYC submission alerts, car approval queue updates, platform event streaming.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card card-blue" style="padding:20px">
+          <h4 class="primary" style="margin-bottom:12px">🔔 Notification System — 30+ Types</h4>
+          <div class="grid-2" style="gap:6px;font-size:11px">
+            <div class="badge badge-blue">BookingConfirmed</div>
+            <div class="badge badge-teal">BookingCompleted</div>
+            <div class="badge badge-rose">BookingRejected</div>
+            <div class="badge badge-amber">NewBookingRequest</div>
+            <div class="badge badge-violet">PaymentSucceeded</div>
+            <div class="badge badge-gray">BalanceCredited</div>
+            <div class="badge badge-blue">ReviewReceived</div>
+            <div class="badge badge-teal">ListingApproved</div>
+            <div class="badge badge-amber">BookingUpcoming24h</div>
+            <div class="badge badge-rose">InsuranceExpiring</div>
+            <div class="badge badge-violet">RefundIssued</div>
+            <div class="badge badge-gray">CardAdded</div>
+          </div>
+          <p style="font-size:12px;margin-top:10px;color:var(--muted)">...and 18 more. All stored in DB, read/unread tracking, cleared by user.</p>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <h4 class="accent" style="margin-bottom:12px">💬 In-Booking Chat</h4>
+          <ul class="check-list">
+            <li>Conversation auto-created on booking request</li>
+            <li>System BookingCard message as opener</li>
+            <li>Text + Image message types</li>
+            <li>Read receipts with per-user state tracking</li>
+            <li>Unread count badge in nav</li>
+            <li>JWT passed via query string for WS auth</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 10 — KYC & TRUST SYSTEM
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-blue" id="slide-10">
+    <div class="slide-label">Trust &amp; Safety</div>
+    <h2>KYC Verification <span class="primary">&amp; Trust Framework</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-16 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-blue" style="padding:20px">
+          <h4 class="primary" style="margin-bottom:12px">🪪 Identity Verification (KYC)</h4>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:12px">
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600">Document Upload</div>
+                <p style="font-size:12px">Passport, ID card, or residence permit — front &amp; back photos</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600">Selfie Verification</div>
+                <p style="font-size:12px">Live selfie matched against document photo</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot teal"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600">Driver's License</div>
+                <p style="font-size:12px">Front, back, and selfie with license required for renters</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot amber"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600">Admin Review Queue</div>
+                <p style="font-size:12px">Paginated admin queue — Pending → In Review → Approved/Rejected</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card card-teal" style="padding:20px">
+          <h4 class="accent" style="margin-bottom:12px">🚗 Car Listing Verification</h4>
+          <ul class="check-list">
+            <li>Insurance policy upload + expiry date</li>
+            <li>Technical inspection certificate</li>
+            <li>Tech passport (front + back)</li>
+            <li>GPS tracker photo (optional)</li>
+            <li>VIN OCR extraction — mismatch flagged</li>
+            <li>Admin approves: Draft → Listed</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card card-violet" style="padding:20px">
+          <h4 class="violet" style="margin-bottom:12px">🛡 Fraud Prevention</h4>
+          <ul class="check-list">
+            <li>Fraud risk score per user (adjustable)</li>
+            <li>Is-on-fraud-watchlist flag</li>
+            <li>Admin can ban users instantly</li>
+            <li>Rate limiting on all public endpoints</li>
+            <li>Idempotency key on payments</li>
+            <li>Cancellation count tracked per host</li>
+          </ul>
+        </div>
+        <div class="card card-rose" style="padding:20px">
+          <h4 style="color:#fda4af;margin-bottom:12px">📋 Audit Trail</h4>
+          <ul class="check-list">
+            <li>Every admin action logged to AuditLog</li>
+            <li>Tracks: entity type, old + new values</li>
+            <li>IP address + user agent recorded</li>
+            <li>Paginated admin audit log view</li>
+            <li>Actor email preserved even after deletion</li>
+          </ul>
+        </div>
+        <div class="card card-amber" style="padding:20px">
+          <h4 class="amber" style="margin-bottom:12px">⭐ Review System</h4>
+          <ul class="check-list">
+            <li>Mutual reviews: guest reviews host &amp; vice versa</li>
+            <li>14-day review window after trip completion</li>
+            <li>Rating averages updated on Car and User</li>
+            <li>Reviewer role tracked (Guest / Host)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 11 — HOST DASHBOARD
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-teal" id="slide-11">
+    <div class="slide-label">Host Experience</div>
+    <h2>Host Dashboard <span class="accent">&amp; Earnings Analytics</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-16 gap-20">
+      <div class="col col-2 gap-14">
+        <!-- Fake chart visualization -->
+        <div class="card" style="padding:20px;border-color:rgba(16,185,129,0.2)">
+          <p class="section-title" style="margin-bottom:8px">Revenue — Last 6 Months (Recharts AreaChart)</p>
+          <div style="display:flex;align-items:flex-end;gap:12px;height:80px;padding-top:8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="flex:1;width:100%;background:rgba(37,99,235,0.25);border-radius:4px 4px 0 0;height:30%"></div>
+              <span style="font-size:10px;color:var(--muted)">Nov</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="flex:1;width:100%;background:rgba(37,99,235,0.35);border-radius:4px 4px 0 0;height:50%"></div>
+              <span style="font-size:10px;color:var(--muted)">Dec</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="flex:1;width:100%;background:rgba(37,99,235,0.45);border-radius:4px 4px 0 0;height:65%"></div>
+              <span style="font-size:10px;color:var(--muted)">Jan</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="flex:1;width:100%;background:rgba(16,185,129,0.45);border-radius:4px 4px 0 0;height:80%"></div>
+              <span style="font-size:10px;color:var(--muted)">Feb</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="flex:1;width:100%;background:rgba(16,185,129,0.6);border-radius:4px 4px 0 0;height:95%"></div>
+              <span style="font-size:10px;color:var(--muted)">Mar</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+              <div style="flex:1;width:100%;background:rgba(16,185,129,0.8);border-radius:4px 4px 0 0;height:100%"></div>
+              <span style="font-size:10px;color:var(--muted)">Apr</span>
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:8px">Bars represent UZS earnings per month. Chart is responsive and interactive with tooltips.</p>
+        </div>
+        <div class="grid-2 gap-8">
+          <div class="stat-box" style="padding:16px">
+            <div class="stat-number accent">4</div>
+            <div class="stat-label">Metric cards on dashboard</div>
+          </div>
+          <div class="stat-box" style="padding:16px">
+            <div class="stat-number primary">5</div>
+            <div class="stat-label">Top cars leaderboard</div>
+          </div>
+          <div class="stat-box" style="padding:16px">
+            <div class="stat-number amber">%</div>
+            <div class="stat-label">Occupancy rate (30 days)</div>
+          </div>
+          <div class="stat-box" style="padding:16px">
+            <div class="stat-number violet">vs</div>
+            <div class="stat-label">Month-over-month % badge</div>
+          </div>
+        </div>
+      </div>
+      <div class="col col-2 gap-14">
+        <div class="card card-teal" style="padding:20px">
+          <h4 class="accent" style="margin-bottom:12px">📊 Dashboard Metric Cards</h4>
+          <ul class="check-list">
+            <li>Revenue this month (UZS) with % vs last month</li>
+            <li>Wallet balance — available &amp; locked</li>
+            <li>Occupancy rate across all listed cars</li>
+            <li>Average guest rating (1–5 stars)</li>
+          </ul>
+        </div>
+        <div class="card card-blue" style="padding:20px">
+          <h4 class="primary" style="margin-bottom:12px">💼 Wallet &amp; Transaction History</h4>
+          <ul class="check-list">
+            <li>In-app wallet with available + locked balance</li>
+            <li>Full ledger with car photo thumbnail</li>
+            <li>Car title and "View booking" link per entry</li>
+            <li>Paginated transaction list (20 per page)</li>
+            <li>Human-readable type labels (Trip earning, etc.)</li>
+          </ul>
+        </div>
+        <div class="card card-amber" style="padding:20px">
+          <h4 class="amber" style="margin-bottom:12px">🚗 Car Management</h4>
+          <ul class="check-list">
+            <li>Create listing wizard (multi-step with drafts)</li>
+            <li>Photo gallery management (Cloudinary)</li>
+            <li>Feature tags (A/C, GPS, etc.)</li>
+            <li>Snooze / remove listings</li>
+            <li>Per-car earnings in top-cars leaderboard</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 12 — ADMIN PANEL
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-rose" id="slide-12">
+    <div class="slide-label">Admin</div>
+    <h2>Admin Control Panel</h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-16 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-rose" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle rose">🪪</div>
+            <h4 style="color:#fda4af">KYC Review Queue</h4>
+          </div>
+          <ul class="check-list">
+            <li>Paginated list of pending verifications</li>
+            <li>View all submitted documents &amp; selfie</li>
+            <li>Approve / Reject with reason</li>
+            <li>Status filter: Pending, In Review, Approved</li>
+            <li>User contact info displayed</li>
+          </ul>
+        </div>
+        <div class="card card-amber" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle amber">🚗</div>
+            <h4 class="amber">Car Listing Approval</h4>
+          </div>
+          <ul class="check-list">
+            <li>Review car details, VIN, insurance docs</li>
+            <li>VIN mismatch flag highlighted</li>
+            <li>Approve → auto-sets Listed status</li>
+            <li>Reject with reason → host notified</li>
+            <li>Auto-approve mode for development</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card card-violet" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle violet">📊</div>
+            <h4 class="violet">Platform Analytics</h4>
+          </div>
+          <ul class="check-list">
+            <li>Total users, hosts, listings, bookings</li>
+            <li>Revenue by month across all hosts</li>
+            <li>Booking status distribution</li>
+            <li>Top earning hosts &amp; cars</li>
+            <li>Real-time updates via AdminHub</li>
+          </ul>
+        </div>
+        <div class="card card-blue" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="icon-circle blue">👥</div>
+            <h4 class="primary">User Management</h4>
+          </div>
+          <ul class="check-list">
+            <li>Search users by name / email</li>
+            <li>View fraud risk score</li>
+            <li>Ban / unban accounts</li>
+            <li>Add to fraud watchlist</li>
+            <li>Admin balance adjustment (credit/debit)</li>
+            <li>Full AuditLog viewer by entity</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="card mt-16 full" style="padding:14px 20px;border-color:rgba(255,255,255,0.08)">
+      <p style="font-size:13px;color:var(--muted)">🔐 <strong style="color:#e2e8f0">Admin security:</strong> Role-based authorization on all admin endpoints · Requests only from local for Hangfire dashboard · IP + user agent recorded in every audit log entry · Dedicated AdminHub for real-time event streaming</p>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 13 — SECURITY & BACKGROUND JOBS
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-indigo" id="slide-13">
+    <div class="slide-label">Reliability &amp; Security</div>
+    <h2>Security Architecture <span class="violet">&amp; Background Jobs</span></h2>
+    <div class="divider mt-8"></div>
+    <div class="row mt-16 gap-20">
+      <div class="col col-2 gap-16">
+        <div class="card card-violet" style="padding:20px">
+          <h4 class="violet" style="margin-bottom:12px">🔒 Security Layers</h4>
+          <table class="tbl">
+            <thead><tr><th>Layer</th><th>Implementation</th></tr></thead>
+            <tbody>
+              <tr><td>Authentication</td><td>JWT — 15-min access + 14-day refresh</td></tr>
+              <tr><td>Authorization</td><td>Policy-based, role-checked per endpoint</td></tr>
+              <tr><td>Rate Limiting</td><td>ASP.NET Core rate limiting by IP</td></tr>
+              <tr><td>Headers</td><td>Security headers middleware (HSTS, CSP, etc)</td></tr>
+              <tr><td>Concurrency</td><td>Optimistic locking on balance (Version field)</td></tr>
+              <tr><td>Idempotency</td><td>UUID key on all payment operations</td></tr>
+              <tr><td>Logging</td><td>Serilog → rolling log files + console</td></tr>
+              <tr><td>Errors</td><td>Global ExceptionHandlingMiddleware</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col col-2 gap-16">
+        <div class="card card-teal" style="padding:20px">
+          <h4 class="accent" style="margin-bottom:14px">⏰ Hangfire Background Jobs</h4>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:12px;align-items:center">
+              <span class="badge badge-blue" style="min-width:100px;justify-content:center">Every minute</span>
+              <div>
+                <div style="font-size:13px;font-weight:600">Booking Expiry Job</div>
+                <p style="font-size:11px">Auto-cancel pending bookings &gt;24h old. Releases availability block.</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span class="badge badge-teal" style="min-width:100px;justify-content:center">Daily</span>
+              <div>
+                <div style="font-size:13px;font-weight:600">Payout Job</div>
+                <p style="font-size:11px">Creates payout records for completed bookings not yet paid out.</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span class="badge badge-amber" style="min-width:100px;justify-content:center">Daily</span>
+              <div>
+                <div style="font-size:13px;font-weight:600">Review Reminder Job</div>
+                <p style="font-size:11px">Sends email reminders to guests who haven't reviewed yet.</p>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span class="badge badge-violet" style="min-width:100px;justify-content:center">Daily</span>
+              <div>
+                <div style="font-size:13px;font-weight:600">Host Onboarding Reminder</div>
+                <p style="font-size:11px">Nudges incomplete host profiles to finish setup.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card card-blue" style="padding:20px">
+          <h4 class="primary" style="margin-bottom:12px">📝 Middleware Stack</h4>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div style="font-size:12px"><strong>SecurityHeadersMiddleware</strong> — X-Frame-Options, CSP</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot teal"></div>
+              <div style="font-size:12px"><strong>ExceptionHandlingMiddleware</strong> — consistent error JSON</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot amber"></div>
+              <div style="font-size:12px"><strong>RequestLoggingMiddleware</strong> — Serilog HTTP logs</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot violet"></div>
+              <div style="font-size:12px"><strong>RateLimiter</strong> — per-IP sliding window</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div style="font-size:12px"><strong>JWT Auth</strong> → Controllers / Hubs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLIDE 14 — RESULTS & CONCLUSIONS
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="slide bg-gradient" id="slide-14">
+    <div class="slide-label">Conclusion</div>
+    <h2 style="text-align:center">Project Results <span class="accent">&amp; Future Work</span></h2>
+    <div class="divider" style="margin:12px auto"></div>
+
+    <!-- Stats row -->
+    <div class="row mt-20 gap-12" style="justify-content:center">
+      <div class="stat-box" style="flex:1">
+        <div class="stat-number primary">25+</div>
+        <div class="stat-label">Domain Entities</div>
+      </div>
+      <div class="stat-box" style="flex:1">
+        <div class="stat-number accent">15</div>
+        <div class="stat-label">REST Controllers</div>
+      </div>
+      <div class="stat-box" style="flex:1">
+        <div class="stat-number amber">16</div>
+        <div class="stat-label">Service Modules</div>
+      </div>
+      <div class="stat-box" style="flex:1">
+        <div class="stat-number violet">3</div>
+        <div class="stat-label">SignalR Hubs</div>
+      </div>
+      <div class="stat-box" style="flex:1">
+        <div class="stat-number" style="color:#f43f5e">4</div>
+        <div class="stat-label">Background Jobs</div>
+      </div>
+      <div class="stat-box" style="flex:1">
+        <div class="stat-number primary">5</div>
+        <div class="stat-label">Docker Services</div>
+      </div>
+    </div>
+
+    <div class="row mt-16 gap-16 full">
+      <div class="col col-2 gap-12">
+        <div class="card card-teal" style="padding:18px">
+          <h4 class="accent" style="margin-bottom:10px">✅ Achieved</h4>
+          <ul class="check-list" style="gap:5px">
+            <li>Full booking lifecycle — request to review</li>
+            <li>Real payment wallet + card system with ledger</li>
+            <li>KYC identity &amp; car document verification</li>
+            <li>Geospatial car search with PostGIS</li>
+            <li>Real-time chat &amp; 30+ notification types</li>
+            <li>Host analytics dashboard with Recharts</li>
+            <li>Admin panel with audit trail</li>
+            <li>Automated background job suite</li>
+            <li>Dockerized full-stack deployment</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col col-2 gap-12">
+        <div class="card card-violet" style="padding:18px">
+          <h4 class="violet" style="margin-bottom:10px">🚀 Future Roadmap</h4>
+          <ul class="check-list" style="gap:5px">
+            <li>Native iOS &amp; Android mobile apps (React Native)</li>
+            <li>Live payment gateway integration (Payme/Click API)</li>
+            <li>Real GPS tracker integration per vehicle</li>
+            <li>AI-powered dynamic surge pricing</li>
+            <li>Multi-language (UZ / RU / EN)</li>
+            <li>Insurance partnership API integration</li>
+            <li>Damage assessment with AI photo analysis</li>
+            <li>Corporate fleet rental module</li>
+          </ul>
+        </div>
+        <div class="card" style="padding:18px;border-color:rgba(255,255,255,0.1)">
+          <h4 style="margin-bottom:10px;color:#e2e8f0">💡 Key Learnings</h4>
+          <ul class="check-list" style="gap:5px">
+            <li>Geospatial queries with PostGIS &amp; NetTopologySuite</li>
+            <li>WebSocket auth in SignalR via query-string tokens</li>
+            <li>Optimistic concurrency for financial operations</li>
+            <li>Idempotency keys preventing double-charges</li>
+            <li>Multi-container Docker orchestration</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px">
+      <div style="font-size:22px;font-weight:800;background:linear-gradient(135deg,#fff,#93c5fd,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+        Thank you
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:4px">Questions &amp; Demo</p>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- Navigation Controls -->
+<div class="nav">
+  <button onclick="goTo(current-1)" title="Previous (←)">&#8592;</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 14</span>
+  <button onclick="goTo(current+1)" title="Next (→)">&#8594;</button>
+</div>
+
+<div class="kbd-hint">← → or click dots to navigate</div>
+
+<script>
+  const total = 14;
+  let current = 1;
+
+  const dotsEl = document.getElementById('dots');
+  const counterEl = document.getElementById('counter');
+
+  // Build dots
+  for (let i = 1; i <= total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  function goTo(n) {
+    n = Math.max(1, Math.min(total, n));
+    if (n === current) return;
+    document.getElementById('slide-' + current).classList.remove('active');
+    document.querySelectorAll('.dot')[current - 1].classList.remove('active');
+    current = n;
+    document.getElementById('slide-' + current).classList.add('active');
+    document.querySelectorAll('.dot')[current - 1].classList.add('active');
+    counterEl.textContent = current + ' / ' + total;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') goTo(1);
+    if (e.key === 'End')  goTo(total);
+    if (e.key >= '1' && e.key <= '9') goTo(parseInt(e.key));
+  });
+</script>
+
+</body>
+</html>

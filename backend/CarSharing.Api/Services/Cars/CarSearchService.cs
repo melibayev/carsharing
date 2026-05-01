@@ -27,12 +27,6 @@ public class CarSearchService : ICarSearchService
             .Where(c => c.Status == CarStatus.Listed)
             .AsQueryable();
 
-        // Exclude caller's own cars
-        if (callerId.HasValue)
-        {
-            query = query.Where(c => c.OwnerId != callerId.Value);
-        }
-
         // City filter
         if (!string.IsNullOrWhiteSpace(request.City))
         {

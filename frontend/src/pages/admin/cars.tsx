@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAdminCars, useAdminCarDetail, useApproveCar, useRejectCar } from '@/hooks/use-admin';
 import type { AdminCarDto } from '@/types';
-import { formatUzs, formatDate } from '@/lib/utils';
+import { formatUsd, formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, ZoomIn, AlertTriangle } from 'lucide-react';
 import { CarStatus } from '@/types';
@@ -361,7 +361,7 @@ export default function AdminCars() {
                         <p className="text-xs text-muted-foreground">{car.ownerEmail}</p>
                       </td>
                       <td className="p-3 text-muted-foreground">{car.city}</td>
-                      <td className="p-3">{formatUzs(car.dailyPriceUsd)}</td>
+                      <td className="p-3">{formatUsd(car.dailyPriceUsd)}</td>
                       <td className="p-3">
                         <Badge variant={statusColor[car.status] as 'default' | 'secondary' | 'outline' | 'destructive'}>
                           {car.status}

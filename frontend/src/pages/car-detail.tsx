@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star, MapPin, Calendar, Shield, Fuel, Cog, Users, Zap,
   ChevronLeft, ChevronRight, Car, Grid2x2, X, ArrowLeft, ShieldCheck,
+  CheckCircle2, Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -351,11 +352,14 @@ export default function CarDetailPage() {
                 ))}
               </TabsList>
 
-              <TabsContent value="description" className="mt-6 space-y-5">
+              <TabsContent value="description" className="mt-6 space-y-6">
                 {car.description ? (
-                  <p className="text-muted-foreground leading-relaxed whitespace-pre-line text-[15px]">
-                    {car.description}
-                  </p>
+                  <div className="relative">
+                    <div className="absolute -left-1 top-0 bottom-0 w-0.5 bg-primary/30 rounded-full" />
+                    <p className="pl-5 text-[15px] leading-[1.85] text-foreground/80 whitespace-pre-line">
+                      {car.description}
+                    </p>
+                  </div>
                 ) : (
                   <p className="text-muted-foreground italic">No description provided.</p>
                 )}
@@ -378,20 +382,59 @@ export default function CarDetailPage() {
                       <p className="font-semibold mt-1">{car.color}</p>
                     </div>
                   )}
+                  <div className="p-4 rounded-xl bg-muted/40 border border-border/50">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Doors</p>
+                    <p className="font-semibold mt-1">{car.doors}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-muted/40 border border-border/50">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Seats</p>
+                    <p className="font-semibold mt-1">{car.seats}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-muted/40 border border-border/50">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Fuel</p>
+                    <p className="font-semibold mt-1">{fuelLabel}</p>
+                  </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="features" className="mt-6">
-                {car.features.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {car.features.map((f) => (
-                      <Badge key={f} variant="secondary" className="rounded-full text-sm py-1.5 px-4 font-normal">
-                        {f}
-                      </Badge>
+              <TabsContent value="features" className="mt-6 space-y-6">
+                {/* Technical specs grid */}
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">Technical Specifications</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { label: 'Body type', value: car.bodyType },
+                      { label: 'Transmission', value: transmissionLabel },
+                      { label: 'Fuel type', value: fuelLabel },
+                      { label: 'Seats', value: `${car.seats}` },
+                      { label: 'Doors', value: `${car.doors}` },
+                      ...(car.odometerKm != null ? [{ label: 'Mileage', value: `${car.odometerKm.toLocaleString()} km` }] : []),
+                      ...(car.color ? [{ label: 'Color', value: car.color }] : []),
+                      ...(car.dailyMileageLimitKm ? [{ label: 'Daily limit', value: `${car.dailyMileageLimitKm} km/day` }] : []),
+                    ].map((s) => (
+                      <div key={s.label} className="p-3.5 rounded-xl bg-muted/40 border border-border/50">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{s.label}</p>
+                        <p className="font-semibold mt-1 text-sm">{s.value}</p>
+                      </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-muted-foreground italic">No features listed.</p>
+                </div>
+                {/* Feature checklist */}
+                {car.features.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">Included Features</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {car.features.map((f) => (
+                        <div key={f} className="flex items-center gap-2.5 py-2.5 px-3 rounded-lg bg-muted/30 border border-border/40">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          <span className="text-sm">{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {car.features.length === 0 && (
+                  <p className="text-muted-foreground italic text-sm">No additional features listed.</p>
                 )}
               </TabsContent>
 
@@ -446,6 +489,41 @@ export default function CarDetailPage() {
                 )}
               </TabsContent>
             </Tabs>
+
+            <Separator />
+
+            {/* ── Minimum Requirements ─────────────────────────── */}
+            <motion.div variants={fadeUp} initial="hidden" animate="show" custom={3.5}>
+              <div className="rounded-2xl border border-border/60 bg-muted/20 overflow-hidden">
+                <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border/40 bg-muted/30">
+                  <Info className="h-4 w-4 text-primary shrink-0" />
+                  <h3 className="font-semibold text-sm">Minimum Requirements</h3>
+                </div>
+                <div className="px-5 py-4 space-y-3">
+                  {[
+                    {
+                      label: 'Security deposit',
+                      value: car.securityDepositUsd > 0
+                        ? `${Math.round(car.securityDepositUsd * 12800).toLocaleString('ru-RU')} UZS`
+                        : 'No deposit required',
+                    },
+                    { label: 'Driving experience', value: '5 years minimum' },
+                    { label: 'Required documents', value: 'Passport and valid driver\'s license' },
+                    { label: 'Minimum age', value: '25 years' },
+                  ].map((r) => (
+                    <div key={r.label} className="flex items-start justify-between gap-4 text-sm">
+                      <span className="text-muted-foreground shrink-0">{r.label}</span>
+                      <span className="font-medium text-right">{r.value}</span>
+                    </div>
+                  ))}
+                  {car.securityDepositUsd > 0 && (
+                    <p className="text-xs text-muted-foreground pt-2 border-t border-border/40">
+                      * The deposit is refunded within 7 business days after the vehicle is returned.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
 
             <Separator />
 

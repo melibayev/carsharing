@@ -88,6 +88,10 @@ export default function Step4Location({ draftId, onNext }: { draftId: string; on
             setValue('lat', latV, { shouldValidate: true });
             setValue('lng', lngV, { shouldValidate: true });
           }}
+          onGeocode={(address, city) => {
+            if (address) setValue('addressLine', address, { shouldDirty: true });
+            if (city) setValue('city', city, { shouldDirty: true });
+          }}
         />
         {(errors.lat || errors.lng) && (
           <p className="text-xs text-destructive">Please pin a location on the map</p>

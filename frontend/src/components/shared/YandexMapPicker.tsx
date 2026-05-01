@@ -19,9 +19,30 @@ interface Props {
   lat?: number | null;
   lng?: number | null;
   onChange: (lat: number, lng: number) => void;
+  /** Called after reverse-geocoding; provides street address and city strings */
+  onGeocode?: (address: string, city: string) => void;
 }
 
-export default function MapPicker({ lat, lng, onChange }: Props) {
+async function reverseGeocode(lat: number, lng: number): Promise<{ address: string; city: string } | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data.address ?? {};
+    const road = a.road ?? a.pedestrian ?? a.footway ?? a.path ?? '';
+    const houseNumber = a.house_number ? ` ${a.house_number}` : '';
+    const address = road ? `${road}${houseNumber}` : (data.display_name?.split(',')[0] ?? '');
+    const city = a.city ?? a.town ?? a.village ?? a.county ?? a.state ?? '';
+    return { address, city };
+  } catch {
+    return null;
+  }
+}
+
+export default function MapPicker({ lat, lng, onChange, onGeocode }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -29,6 +50,20 @@ export default function MapPicker({ lat, lng, onChange }: Props) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     lat != null && lng != null ? { lat, lng } : null,
   );
+
+  const placePin = async (latC: number, lngC: number) => {
+    setCoords({ lat: latC, lng: lngC });
+    onChange(latC, lngC);
+    if (markerRef.current) {
+      markerRef.current.setLatLng([latC, lngC]);
+    } else if (mapRef.current) {
+      markerRef.current = L.marker([latC, lngC]).addTo(mapRef.current);
+    }
+    if (onGeocode) {
+      const result = await reverseGeocode(latC, lngC);
+      if (result) onGeocode(result.address, result.city);
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -47,14 +82,7 @@ export default function MapPicker({ lat, lng, onChange }: Props) {
     }
 
     map.on('click', (e: L.LeafletMouseEvent) => {
-      const { lat: latC, lng: lngC } = e.latlng;
-      setCoords({ lat: latC, lng: lngC });
-      onChange(latC, lngC);
-      if (markerRef.current) {
-        markerRef.current.setLatLng([latC, lngC]);
-      } else {
-        markerRef.current = L.marker([latC, lngC]).addTo(map);
-      }
+      placePin(e.latlng.lat, e.latlng.lng);
     });
 
     mapRef.current = map;
@@ -70,17 +98,10 @@ export default function MapPicker({ lat, lng, onChange }: Props) {
     if (!navigator.geolocation || !mapRef.current) return;
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
-      ({ coords: c }) => {
+      async ({ coords: c }) => {
         const { latitude: latC, longitude: lngC } = c;
-        setCoords({ lat: latC, lng: lngC });
-        onChange(latC, lngC);
-        const map = mapRef.current!;
-        if (markerRef.current) {
-          markerRef.current.setLatLng([latC, lngC]);
-        } else {
-          markerRef.current = L.marker([latC, lngC]).addTo(map);
-        }
-        map.setView([latC, lngC], 15, { animate: true });
+        mapRef.current!.setView([latC, lngC], 15, { animate: true });
+        await placePin(latC, lngC);
         setGeoLoading(false);
       },
       () => setGeoLoading(false),

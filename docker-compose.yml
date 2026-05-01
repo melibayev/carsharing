@@ -64,6 +64,8 @@ services:
       Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
       Twilio__FromPhone: ${TWILIO_FROM_PHONE:-}
       Sms__DevLogPath: /app/dev-sms.log
+    volumes:
+      - uploads:/app/wwwroot/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,3 +85,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

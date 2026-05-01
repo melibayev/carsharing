@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/stores/auth-store';
 import { useMyBookings } from '@/hooks/use-bookings';
 import { useMyCars } from '@/hooks/use-cars';
-import { formatUzs, formatDateRange } from '@/lib/utils';
+import { formatUzs, formatUsd, formatDateRange } from '@/lib/utils';
 import { BookingStatus } from '@/types';
 
 const statusLabels: Record<string, string> = {
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold font-mono">{formatUzs(car.dailyPriceUsd)}/day</p>
+                      <p className="font-bold font-mono">{formatUsd(car.dailyPriceUsd)}/day</p>
                     </div>
                   </CardContent>
                 </Card>

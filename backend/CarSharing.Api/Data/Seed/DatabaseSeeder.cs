@@ -105,6 +105,16 @@ public class DatabaseSeeder
         ("Bike Rack", "bike-rack", "bicycle"),
         ("Ski Rack", "ski-rack", "mountain"),
         ("Roof Rack", "roof-rack", "box"),
+        // Premium / luxury features
+        ("Premium Audio System", "premium-audio", "music"),
+        ("Head-Up Display", "hud", "monitor"),
+        ("Front Camera", "front-camera", "camera"),
+        ("Parking Assistance", "parking-assist", "crosshair"),
+        ("Blind Spot Monitoring", "blind-spot", "eye-off"),
+        ("SRS Airbags", "srs-airbags", "shield"),
+        ("Leather Seats", "leather-seats", "sofa"),
+        ("Cruise Control", "cruise-control", "gauge"),
+        ("Tinted Windows", "tinted-windows", "sun"),
     };
 
     private readonly List<Feature> _features = new();

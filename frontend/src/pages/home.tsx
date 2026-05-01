@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { REGIONS } from '@/lib/regions';
-import { useCarSearch } from '@/hooks/use-cars';
+import { useFeaturedCars } from '@/hooks/use-cars';
 import { CarCard } from '@/components/cars/car-card';
 import { useBookingIntent } from '@/hooks/use-booking-intent';
 import { useAuthStore } from '@/stores/auth-store';
@@ -68,7 +68,7 @@ export default function HomePage() {
   const [currentBg, setCurrentBg] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const { data: featuredCars } = useCarSearch({ pageSize: 8, sort: 'rating' });
+  const { data: featuredCars } = useFeaturedCars(8);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentBg((p) => (p + 1) % heroImages.length), 6000);
@@ -264,7 +264,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredCars?.items.slice(0, 8).map((car) => (
+            {featuredCars?.slice(0, 8).map((car) => (
               <CarCard key={car.id} car={car} />
             ))}
           </div>

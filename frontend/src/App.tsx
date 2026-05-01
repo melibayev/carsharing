@@ -25,6 +25,7 @@ const HostShell = lazy(() => import('@/components/host/HostShell'));
 const HostDashboard = lazy(() => import('@/pages/host/index'));
 const HostCars = lazy(() => import('@/pages/host/cars/index'));
 const HostCarNew = lazy(() => import('@/pages/host/cars/new'));
+const HostCarEdit = lazy(() => import('@/pages/host/cars/edit'));
 const HostBookings = lazy(() => import('@/pages/host/bookings'));
 const HostEarnings = lazy(() => import('@/pages/host/earnings'));
 
@@ -86,6 +87,7 @@ export default function App() {
               <Route index element={<HostDashboard />} />
               <Route path="cars" element={<HostCars />} />
               <Route path="cars/new" element={<HostCarNew />} />
+              <Route path="cars/:id/edit" element={<HostCarEdit />} />
               <Route path="bookings" element={<HostBookings />} />
               <Route path="bookings/:id" element={<BookingDetail />} />
               <Route path="earnings" element={<HostEarnings />} />

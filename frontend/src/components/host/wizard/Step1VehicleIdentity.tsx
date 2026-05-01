@@ -15,14 +15,21 @@ import { Button } from '@/components/ui/button';
 import { usePatchDraft, useVinAvailable } from '@/hooks/use-host';
 import { useListingWizardStore } from '@/stores/listing-wizard-store';
 
+const BODY_TYPES = ['Sedan','SUV','Hatchback','Coupe','Convertible','Truck','Van','Minivan','Wagon','SportsCar'] as const;
+const FUEL_TYPES = ['Gasoline','Diesel','Hybrid','Electric','PlugInHybrid','CNG'] as const;
+
 const schema = z.object({
   make: z.string().min(1, 'Required'),
   model: z.string().min(1, 'Required'),
   year: z.coerce.number().min(2000).max(new Date().getFullYear() + 1),
+  trim: z.string().optional(),
   vin: z.string().length(17, 'VIN must be 17 characters'),
-  color: z.string().min(1, 'Required'),
+  bodyType: z.enum(BODY_TYPES),
   transmission: z.enum(['Manual', 'Automatic']),
+  fuelType: z.enum(FUEL_TYPES),
   seats: z.coerce.number().min(2).max(12),
+  doors: z.coerce.number().min(2).max(6),
+  color: z.string().min(1, 'Required'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -37,10 +44,14 @@ export default function Step1VehicleIdentity({ draftId, onNext }: { draftId: str
       make: localData.make ?? '',
       model: localData.model ?? '',
       year: localData.year ?? new Date().getFullYear(),
+      trim: (localData as any).trim ?? '',
       vin: localData.vin ?? '',
-      color: localData.color ?? '',
+      bodyType: ((localData as any).bodyType as typeof BODY_TYPES[number]) ?? 'Sedan',
       transmission: (localData.transmission as any) ?? 'Automatic',
+      fuelType: ((localData as any).fuelType as typeof FUEL_TYPES[number]) ?? 'Gasoline',
       seats: localData.seats ?? 5,
+      doors: localData.doors ?? 4,
+      color: localData.color ?? '',
     },
   });
 
@@ -77,9 +88,8 @@ export default function Step1VehicleIdentity({ draftId, onNext }: { draftId: str
           {errors.year && <p className="text-xs text-destructive">{errors.year.message}</p>}
         </div>
         <div className="space-y-1">
-          <Label>Color</Label>
-          <Input {...register('color')} placeholder="White" />
-          {errors.color && <p className="text-xs text-destructive">{errors.color.message}</p>}
+          <Label>Trim <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input {...register('trim')} placeholder="e.g. Sport, Luxury" />
         </div>
       </div>
 
@@ -98,14 +108,44 @@ export default function Step1VehicleIdentity({ draftId, onNext }: { draftId: str
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
+          <Label>Body Type</Label>
+          <Select
+            defaultValue={(localData as any).bodyType ?? 'Sedan'}
+            onValueChange={(v) => setValue('bodyType', v as typeof BODY_TYPES[number])}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {BODY_TYPES.map((bt) => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label>Fuel Type</Label>
+          <Select
+            defaultValue={(localData as any).fuelType ?? 'Gasoline'}
+            onValueChange={(v) => setValue('fuelType', v as typeof FUEL_TYPES[number])}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Gasoline">Gasoline</SelectItem>
+              <SelectItem value="Diesel">Diesel</SelectItem>
+              <SelectItem value="Hybrid">Hybrid</SelectItem>
+              <SelectItem value="Electric">Electric</SelectItem>
+              <SelectItem value="PlugInHybrid">Plug-in Hybrid</SelectItem>
+              <SelectItem value="CNG">CNG</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
           <Label>Transmission</Label>
           <Select
-            defaultValue="Automatic"
+            defaultValue={(localData.transmission as string) ?? 'Automatic'}
             onValueChange={(v) => setValue('transmission', v as 'Manual' | 'Automatic')}
           >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="Automatic">Automatic</SelectItem>
               <SelectItem value="Manual">Manual</SelectItem>
@@ -113,8 +153,20 @@ export default function Step1VehicleIdentity({ draftId, onNext }: { draftId: str
           </Select>
         </div>
         <div className="space-y-1">
+          <Label>Color</Label>
+          <Input {...register('color')} placeholder="White" />
+          {errors.color && <p className="text-xs text-destructive">{errors.color.message}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
           <Label>Seats</Label>
           <Input type="number" {...register('seats')} min={2} max={12} />
+        </div>
+        <div className="space-y-1">
+          <Label>Doors</Label>
+          <Input type="number" {...register('doors')} min={2} max={6} />
         </div>
       </div>
 

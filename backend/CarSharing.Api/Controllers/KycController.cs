@@ -24,6 +24,7 @@ public class KycController : ControllerBase
 
     [HttpPost]
     [Consumes("multipart/form-data")]
+    [RequestSizeLimit(30 * 1024 * 1024)]
     public async Task<ActionResult<KycVerificationDto>> Submit(
         [FromForm] string documentType,
         [FromForm] IFormFile documentFront,
